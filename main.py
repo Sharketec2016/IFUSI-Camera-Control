@@ -196,6 +196,7 @@ class CameraMonitorApp:
         self.camera_queues: Dict[str, Queue] = {}
         self.camera_workers: Dict[str, CameraWorker] = {}
         self.running_experiment = False
+        self.running_acquisition = False
 
         self.queryingConnection = False
     
@@ -449,11 +450,11 @@ class CameraMonitorApp:
         button_frame.pack(fill=tk.X, padx=20, pady=10)
         
         # Add Save and Load buttons
-        save_btn = ttk.Button(button_frame, text="Save Notes", 
+        save_btn = ttk.Button(button_frame, text="Save Header", 
                             command=self.save_notes)
         save_btn.pack(side=tk.LEFT, padx=5)
         
-        load_btn = ttk.Button(button_frame, text="Load Notes", 
+        load_btn = ttk.Button(button_frame, text="Load Header", 
                             command=self.load_notes)
         load_btn.pack(side=tk.LEFT, padx=5)
 
@@ -499,7 +500,9 @@ class CameraMonitorApp:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load notes: {str(e)}")
 
-    def update_camera_status(self):
+        
+
+    def update_acquisition_status(self):
         """Update the status of each camera periodically"""
         if(self.running_experiment):
             self.monitoring = False
@@ -538,10 +541,19 @@ class CameraMonitorApp:
 
     def connect_all_cameras(self):
         """Connect to all cameras - placeholder function"""
-        messagebox.showinfo("Connect All", "Attempting to connect to all cameras...")
-        # Implement your actual connection logic here
         self.queryingConnection = True
+        
+        for i, serial in enumerate(self.camera_serials):
+            if self.queryingConnection:
+                self.camera_labels[serial]['status_label'] = 'Checking...'                
+                self.update_camera_ui(serial, self.cameras[i].connection_status())
 
+        self.queryingConnection = False
+        self.status_frame.update_idletasks()
+        
+        
+        
+         
     def disconnect_all_cameras(self):
         """Disconnect all cameras - placeholder function"""
         messagebox.showinfo("Disconnect All", "Disconnecting all cameras...")
@@ -604,7 +616,7 @@ class CameraMonitorApp:
         """Start the monitoring thread"""
         if not self.monitor_thread or not self.monitor_thread.is_alive():
             self.monitoring = True
-            self.monitor_thread = threading.Thread(target=self.update_camera_status, daemon=True)
+            self.monitor_thread = threading.Thread(target=self.update_acquisition_status, daemon=True)
             self.monitor_thread.start()
             print("Camera monitoring started")
 
