@@ -182,17 +182,13 @@ class CameraMonitorApp:
         # self.camera3 = AndoriXonCamera(camIndex=2, serialNumber=67890)
         # self.camera4 = AndoriXonCamera(camIndex=3, serialNumber=13579)
         # self.cameras = [self.camera1, self.camera2, self.camera3, self.camera4]
-        
+        self.cameras = [] #TODO remove this later.
         # Get camera serial numbers: TODO change this to search for all connected devices and find the cameras that way
         # self.camera_serials = [self.camera1.serialNumber, self.camera2.serialNumber, self.camera3.serialNumber, self.camera4.serialNumber]
         self.camera_serials = ["1234567", "7654321", "9876543", "5432109"]
         # Create UI elements
         self.create_ui()
         
-        # Start monitoring thread. This will check the camera status every 2 seconds, and update the UI.
-        # self.monitoring = True
-        # self.monitor_thread = threading.Thread(target=self.update_camera_status, daemon=True)
-        # self.monitor_thread.start()
         
         self.monitoring = True
         self.monitor_thread = None
@@ -200,7 +196,8 @@ class CameraMonitorApp:
         self.camera_queues: Dict[str, Queue] = {}
         self.camera_workers: Dict[str, CameraWorker] = {}
         self.running_experiment = False
-    
+
+        self.queryingConnection = False
     
     
     def setup_camera_workers(self):
@@ -302,8 +299,20 @@ class CameraMonitorApp:
             serial_label = tk.Label(frame, text=serial, font=("Courier", 12, "bold"))
             serial_label.pack(side=tk.LEFT, padx=5)
             
-            status_label = ttk.Label(frame, text="Checking...")
-            status_label.pack(side=tk.LEFT, padx=20)
+            
+            
+            if self.queryingConnection:
+                status_label = ttk.Label(frame, text="Checking...")
+                status_label.pack(side=tk.LEFT, padx=20)
+                if self.cameras[i].connection_status():
+                    status_label = ttk.Label(frame, text="Connected")
+                    status_label.pack(side=tk.LEFT, padx=20)
+                    self.queryingConnection = False
+                else:
+                    status_label = ttk.Label(frame, text="Not Connected")
+                    status_label.pack(side=tk.LEFT, padx=20)
+                    self.queryingConnection = False
+            
             
             self.camera_labels[serial] = {
                 "serial_label": serial_label,
@@ -531,6 +540,7 @@ class CameraMonitorApp:
         """Connect to all cameras - placeholder function"""
         messagebox.showinfo("Connect All", "Attempting to connect to all cameras...")
         # Implement your actual connection logic here
+        self.queryingConnection = True
 
     def disconnect_all_cameras(self):
         """Disconnect all cameras - placeholder function"""
