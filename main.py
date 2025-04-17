@@ -17,6 +17,8 @@ from queue import Queue
 from typing import Dict, List
 from backend.cameraHandle import *
 from backend.cameraConfig import *
+from backend.cameraDataHandle import *
+
 
 
 #!/usr/bin/env python3
@@ -65,8 +67,6 @@ class CameraDrivers:
         # Simulating success - replace with your actual implementation
         return True
 
-
-
 class CameraWorker:
     def __init__(self, camera, command_queue: Queue):
         self.camera = camera
@@ -74,7 +74,7 @@ class CameraWorker:
         self.running = False
         self.thread = None
         self.acquisition_count = 0
-        self.total_acquisitions = 10000
+        self.total_acquisitions = 1000
         self.acquisition_interval = 0.04  # 40ms in seconds
         self.image_buffer = np.zeros((1024, 720, self.total_acquisitions), dtype=np.uint16)
         
@@ -101,8 +101,6 @@ class CameraWorker:
                 action = command.get('action')
                 if action == 'start_acquisition':
                     self._handle_acquisition()
-                elif action == 'stop_acquisition':
-                    self._handle_stop()
                 elif action == 'configure':
                     settings = command.get('settings', {})
                     self._handle_configure(settings)
@@ -122,8 +120,8 @@ class CameraWorker:
                 
                 # Start acquisition
                 self.camera.start_acquisition()
+                # Wait for the frame to be ready
                 time.sleep(self.acquisition_interval)
-                # Wait for frame to be ready
                 # Stop acquisition
                 self.camera.stop_acquisition()
                 
@@ -135,7 +133,6 @@ class CameraWorker:
                 # Update progress
                 self.acquisition_count += 1
                 if self.acquisition_count % 100 == 0:
-                    print(f"Camera {self.camera.serialNumber}: {self.acquisition_count}/{self.total_acquisitions} frames captured")
                     break
 
                     
@@ -146,18 +143,12 @@ class CameraWorker:
             # Save the acquired data
             if self.acquisition_count > 0:
                 try:
-                    self.camera.save_fits_data(self.image_buffer[self.acquisition_count, :,:])
+                    save_fits_data(self.image_buffer[self.acquisition_count, :,:])
                     
                     print(f"Saved {self.acquisition_count} frames for camera {self.camera.serialNumber}")
                 except Exception as e:
                     print(f"Error saving data for camera {self.camera.serialNumber}: {e}")
             
-    def _handle_stop(self):
-        """Handle stopping acquisition"""
-        try:
-            self.camera.stop_acquisition()
-        except Exception as e:
-            print(f"Error stopping acquisition for camera {self.camera.serialNumber}: {e}")
             
     def _handle_configure(self, settings):
         """Handle camera configuration"""
@@ -199,6 +190,8 @@ class CameraMonitorApp:
         self.running_acquisition = False
 
         self.queryingConnection = False
+        
+        self.connection_button_status = True
     
     
     def setup_camera_workers(self):
@@ -301,19 +294,9 @@ class CameraMonitorApp:
             serial_label.pack(side=tk.LEFT, padx=5)
             
             
-            
-            if self.queryingConnection:
-                status_label = ttk.Label(frame, text="Checking...")
-                status_label.pack(side=tk.LEFT, padx=20)
-                if self.cameras[i].connection_status():
-                    status_label = ttk.Label(frame, text="Connected")
-                    status_label.pack(side=tk.LEFT, padx=20)
-                    self.queryingConnection = False
-                else:
-                    status_label = ttk.Label(frame, text="Not Connected")
-                    status_label.pack(side=tk.LEFT, padx=20)
-                    self.queryingConnection = False
-            
+                    
+            status_label = ttk.Label(frame, text="")
+            status_label.pack(side=tk.LEFT, padx=20)
             
             self.camera_labels[serial] = {
                 "serial_label": serial_label,
@@ -500,8 +483,6 @@ class CameraMonitorApp:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load notes: {str(e)}")
 
-        
-
     def update_acquisition_status(self):
         """Update the status of each camera periodically"""
         if(self.running_experiment):
@@ -513,7 +494,7 @@ class CameraMonitorApp:
                 status = self.camera_drivers.get_camera_status(serial)
                 
                 # Use after() to update UI from the main thread
-                self.root.after(0, self.update_camera_ui, serial, status)
+                self.root.after(0, self.refresh_all())
 
             # Sleep for a while before next update
             time.sleep(2)
@@ -533,32 +514,37 @@ class CameraMonitorApp:
 
     def refresh_all(self):
         """Refresh all camera statuses"""
-        for serial in self.camera_serials:
-            status = self.camera_drivers.get_camera_status(serial)
-            self.update_camera_ui(serial, status)
-
-        messagebox.showinfo("Refresh", "Camera statuses refreshed!")
+        self.queryingConnection = True
+        for i, serial in enumerate(self.camera_serials):
+            self.update_camera_ui(serial, self.cameras[i].connection_status())
+        
+        self.queryingConnection = False
+        self.status_frame.update_idletasks()
 
     def connect_all_cameras(self):
         """Connect to all cameras - placeholder function"""
-        self.queryingConnection = True
-        
-        for i, serial in enumerate(self.camera_serials):
-            if self.queryingConnection:
+        if self.connection_button_status:
+            for i, serial in enumerate(self.camera_serials):
                 self.camera_labels[serial]['status_label'] = 'Checking...'                
-                self.update_camera_ui(serial, self.cameras[i].connection_status())
-
-        self.queryingConnection = False
-        self.status_frame.update_idletasks()
-        
-        
-        
-         
+                self.cameras[i].connect()
+                
+        self.connection_button_status = False
+        self.refresh_all()
+            
+            
     def disconnect_all_cameras(self):
         """Disconnect all cameras - placeholder function"""
-        messagebox.showinfo("Disconnect All", "Disconnecting all cameras...")
-        # Implement your actual disconnection logic here
-
+        if not self.connection_button_status:
+            for i, serial in enumerate(self.camera_serials):
+                self.camera_labels[serial]['status_label'] = 'Checking...'                
+                self.cameras[i].disconnect()
+                
+        self.connection_button_status = True
+        self.refresh_all()
+        
+        
+        
+        
     def on_camera_selected(self, event):
         """Handle camera selection change"""
         # Load the settings for the selected camera - implement this with your actual logic
@@ -658,7 +644,7 @@ class CameraMonitorApp:
                 messagebox.showerror("Error", f"Camera {camera.serialNumber} is not connected")
                 return
         
-        print("All cameras are connected. Proceeding with configuration")
+        
         for camera in self.cameras:
             try:    
                 camera.camera_configuration()
@@ -666,7 +652,6 @@ class CameraMonitorApp:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to configure camera {camera.serialNumber}: {str(e)}")
                 return
-        print("All cameras configured. Starting acquisition")
         # Start all workers
         for worker in self.camera_workers.values():
             worker.start_worker()
