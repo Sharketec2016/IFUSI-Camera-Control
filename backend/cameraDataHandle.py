@@ -1,6 +1,3 @@
-
-
-
 def buildFromTextFile(self, filename, header):
     with open(filename, 'r') as f:
         x = 0

@@ -191,8 +191,7 @@ class CameraMonitorApp:
 
         self.queryingConnection = False
         
-        self.connection_button_status = True
-    
+
     
     def setup_camera_workers(self):
         """Initialize worker threads for each camera"""
@@ -202,7 +201,6 @@ class CameraMonitorApp:
             self.camera_queues[camera.serialNumber] = queue
             self.camera_workers[camera.serialNumber] = worker
             
-    
     def create_ui(self):
         """Create the main UI elements"""
         # Create the main frame
@@ -292,10 +290,11 @@ class CameraMonitorApp:
             
             serial_label = tk.Label(frame, text=serial, font=("Courier", 12, "bold"))
             serial_label.pack(side=tk.LEFT, padx=5)
-            
+            serial_label.config(fg="red")
             
                     
-            status_label = ttk.Label(frame, text="")
+            status_label = ttk.Label(frame, text="Disconnected", font=("Arial", 12))
+
             status_label.pack(side=tk.LEFT, padx=20)
             
             self.camera_labels[serial] = {
@@ -510,40 +509,53 @@ class CameraMonitorApp:
                 labels["status_label"].config(text="Connected")
             else:
                 labels["serial_label"].config(fg="red")
-                labels["status_label"].config(text="Disconnected")
+                val = labels["status_label"]
+                val.config(text="Disconnected")
+
 
     def refresh_all(self):
         """Refresh all camera statuses"""
         self.queryingConnection = True
         for i, serial in enumerate(self.camera_serials):
-            self.update_camera_ui(serial, self.cameras[i].connection_status())
-        
+            try:
+                self.update_camera_ui(serial, self.cameras[i].connection_status())
+            except Exception as e:
+                self.update_camera_ui(serial, False)
         self.queryingConnection = False
-        self.status_frame.update_idletasks()
+        self.status_frame.update()
+
 
     def connect_all_cameras(self):
         """Connect to all cameras - placeholder function"""
-        if self.connection_button_status:
-            for i, serial in enumerate(self.camera_serials):
-                self.camera_labels[serial]['status_label'] = 'Checking...'                
-                self.cameras[i].connect()
-                
-        self.connection_button_status = False
+        
+        for i, serial in enumerate(self.camera_serials):
+                            
+            try:
+                tmp_cam = AndoriXonCamera(camIndex=i, serialNumber=serial)
+                if tmp_cam.connect():
+                    self.cameras[i] = tmp_cam
+                else:
+                    messagebox.showerror("Error", f"Failed to connect to camera {serial}")
+                    continue
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to connect to camera {serial}: {str(e)}")
+                continue    
+        
         self.refresh_all()
-            
-            
+                
     def disconnect_all_cameras(self):
         """Disconnect all cameras - placeholder function"""
-        if not self.connection_button_status:
-            for i, serial in enumerate(self.camera_serials):
-                self.camera_labels[serial]['status_label'] = 'Checking...'                
+        
+        for i, serial in enumerate(self.camera_serials):
+            try:
+                self.camera_labels[serial]['status_label'].config(text="Disconnected")
+                self.camera_labels[serial]['serial_label'].config(fg="red")             
                 self.cameras[i].disconnect()
-                
-        self.connection_button_status = True
+            except Exception as e: 
+                messagebox.showerror("Error", f"Failed to disconnect camera {serial}: {str(e)}")
+                continue        
+
         self.refresh_all()
-        
-        
-        
         
     def on_camera_selected(self, event):
         """Handle camera selection change"""
@@ -593,11 +605,14 @@ class CameraMonitorApp:
     def exit_app(self):
         """Clean exit of the application"""
         self.monitoring = False
-        if self.monitor_thread.is_alive():
-            self.monitor_thread.join(timeout=1.0)
+        try:
+            if self.monitor_thread.is_alive():
+                self.monitor_thread.join(timeout=1.0)
+        except Exception as e:
+            print(f"Error stopping monitoring thread: {e}")
+        
         self.root.destroy()
         
-    
     def start_monitoring(self):
         """Start the monitoring thread"""
         if not self.monitor_thread or not self.monitor_thread.is_alive():
@@ -663,7 +678,6 @@ class CameraMonitorApp:
         # Start progress monitoring
         self.root.after(1000, self.check_experiment_progress)
         
-        
     def check_experiment_progress(self):
         """Monitor experiment progress"""
         if not self.running_experiment:
@@ -690,19 +704,7 @@ class CameraMonitorApp:
         self.start_monitoring()
         messagebox.showinfo("Complete", "Experiment completed successfully!")
     
-    
-    def camera_confirmation(iXonSerialNumbers):
-        """
-        Check if the cameras are connected and working properly.
-        """
-        for serial in iXonSerialNumbers:
-            cameraObj = AndoriXonCamera(camIndex=0, serialNumber=serial)
-            if not cameraObj.connection_status():
-                print(f"Camera {serial} is not connected.")
-                return False
-        print("All cameras are connected.")
-        return True
-
+  
 def main():
     root = tk.Tk()
     app = CameraMonitorApp(root)
