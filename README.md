@@ -16,16 +16,16 @@ Program Project Structure:
 4. After capture of each image, they need to be saved locally within a folder. Since a total of 4 (or 5) cameras will be used, 4\5 folders is needed. Each camera will save its images into a unique folder, where later someone can go through and post process.
 
 ## Creating a workable env
-To properly use the camera application, a suitable environment needs to be created first. It is recommended that Ananconda (conda) be used. Follow the steps below will result in a workable enviornment. 
+To properly use the camera application, a suitable environment needs to be created first. It is recommended that Ananconda (conda) be used. Follow the steps below will result in a workable enviornment (env). 
 
-1. Install anaconda3 from Anaconda (https://www.anaconda.com/download/success). Follow the installation instruction per your host operating system. 
-2. Using the command `conda activate _put your env name here_`, activate the env is it isnt already active. Refer to the anaconda installation or instructions page for further guidance on activating your env.
-3. Using the command `conda install _packageName_` install the following backages
+1. Install anaconda3 from Anaconda (https://www.anaconda.com/download/success). Following the installation instruction per your host operating system. 
+2. Using the command `conda activate _put your env name here_`, activate the env if it isn't already active. Refer to the anaconda installation or instructions page for further guidance on activating your env.
+3. Using the command `conda install _packageName_` install the following packages
     1. numpy - This will be used for array handling of data
     2. astropy - Package for data formatting, header creation, and data saving.
     3. pandas - Package for dataframe creation, data handling, and data saving.
     4. Use the command `conda install -c conda-forge pylablib`  - Contains all camera drivers for the iXon Andor cameras.
-    Note: All other packages used within the project should be included by default, or install along side the above automatically. If any errors occur, install the missing packages/dependances. 
+    Note: All other packages used within the project should be included by default, or should aldready be installed along side the above packages automatically. If any missing dependency errors occur, install the missing packages/dependances accordingly. 
 4. Within the package populated env, run the command `python main.py` to launch the application. 
 
 
