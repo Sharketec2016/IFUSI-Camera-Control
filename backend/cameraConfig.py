@@ -47,6 +47,7 @@ class AndoriXonCamera():
         self.is_connected = False
         self.is_in_acquisition = False
         self.is_configured = False
+        self.data = None
         # print(f"Setting up camera {self.serialNumber} with default configuration")
         # self.camera_configuration()
 

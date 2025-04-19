@@ -83,6 +83,7 @@ class CameraWorker:
     def stop_worker(self):
         """Stop the worker thread"""
         self.running = False
+        self.camera.data = self.image_buffer
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=1.0)
             
@@ -261,7 +262,7 @@ class CameraMonitorApp:
                 )
                 
                 curr_header = self.notes_text.get("1.0", tk.END)
-                curr_data = [self.camera_workers[cam.serialNumber].image_buffer for cam in self.cameras]
+                curr_data = [cam.data for cam in self.cameras]
                 
                 for data in curr_data:
                     save_fits_data(curr_header, data, save_data_path)
