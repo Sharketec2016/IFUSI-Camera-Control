@@ -20,16 +20,12 @@ from backend.cameraConfig import *
 from backend.cameraDataHandle import *
 
 
+save_data_path = ""
 
-#!/usr/bin/env python3
-# Camera Monitoring Application
 
-# Placeholder for your custom camera driver library
-# Replace this with the actual import for your camera drivers
-# import camera_drivers as cam_drivers
 
-# Placeholder implementation of camera driver functions
-# Replace these with your actual driver implementations
+
+
 class CameraDrivers:
     def get_camera_status(self, serial_number):
         """
@@ -143,7 +139,8 @@ class CameraWorker:
             # Save the acquired data
             if self.acquisition_count > 0:
                 try:
-                    save_fits_data(self.image_buffer[self.acquisition_count, :,:])
+                    
+                    # save_fits_data(self.image_buffer[self.acquisition_count, :,:])
                     
                     print(f"Saved {self.acquisition_count} frames for camera {self.camera.serialNumber}")
                 except Exception as e:
@@ -188,11 +185,11 @@ class CameraMonitorApp:
         self.camera_workers: Dict[str, CameraWorker] = {}
         self.running_experiment = False
         self.running_acquisition = False
+        
+        self.has_run_experiment = False
 
         self.queryingConnection = False
         
-
-    
     def setup_camera_workers(self):
         """Initialize worker threads for each camera"""
         for camera in self.cameras:
@@ -249,7 +246,39 @@ class CameraMonitorApp:
         # Exit button
         self.exit_btn = ttk.Button(self.button_frame, text="Exit", command=self.exit_app)
         self.exit_btn.pack(side=tk.RIGHT, padx=5)
-    
+        
+        #Save Button
+        self.save_btn = ttk.Button(self.button_frame, text="Save", command=self.save_data)
+        self.save_btn.pack(side=tk.RIGHT, padx=5)
+        
+    def save_data(self):
+        if self.has_run_experiment:
+            attempt, result_str = False, ""
+            try:
+                save_data_path = filedialog.askdirectory(
+                    title="Select Directory to Save Data",
+                    initialdir="."  # Starts in current directory
+                )
+                
+                curr_header = self.notes_text.get("1.0", tk.END)
+                curr_data = [self.camera_workers[cam.serialNumber].image_buffer for cam in self.cameras]
+                
+                for data in curr_data:
+                    save_fits_data(curr_header, data, save_data_path)
+                attempt = True
+                result_str = "Data saved successfully!"
+            except Exception as e:
+                attempt = False
+                result_str = f"Failed to save data: {str(e)}"
+            finally:
+                if attempt:
+                    messagebox.showinfo("Success", result_str)
+                else:
+                    messagebox.showerror("Error", result_str)
+        else:
+            messagebox.showerror("Error", "No experiment data to save. Please run an experiment first.")
+
+
     def setup_status_display(self):
         """
         Sets up the camera status display interface within the application.
@@ -423,6 +452,7 @@ class CameraMonitorApp:
         self.notes_text = tk.Text(text_frame, height=20, wrap=tk.WORD, 
                                 yscrollcommand=scrollbar.set)
         self.notes_text.pack(fill=tk.BOTH, expand=True)
+        
         
         # Configure scrollbar
         scrollbar.config(command=self.notes_text.yview)

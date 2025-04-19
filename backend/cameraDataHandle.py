@@ -1,80 +1,84 @@
-def buildFromTextFile(self, filename, header):
-    with open(filename, 'r') as f:
-        x = 0
-        for line in f.readlines():
+import os
+from astropy.io import fits
+
+def Header_from_text(header_text, header):
+    x = 0
+    for line in header_text.readlines():
+        try:
+            line = line.replace("\n", "")
+            key = line.split("=")[0]
+            value = line.split("=")[1]
+        
             try:
-                line = line.replace("\n", "")
-                key = line.split("=")[0]
-                value = line.split("=")[1]
+                comment = line.split("/")[1]
+            except:
+                comment = ""
             
-                try:
-                    comment = line.split("/")[1]
-                except:
-                    comment = ""
-                
-                value = value.split("/")[0].replace("'", "")
-                
-                
-                try:
-                    value = int(float(value))
-                except:
-                    pass
-                
-                try:
-                    value = value.replace("'", "")
-                except:
-                    pass
+            value = value.split("/")[0].replace("'", "")
+            
+            
+            try:
+                value = int(float(value))
+            except:
+                pass
+            
+            try:
+                value = value.replace("'", "")
+            except:
+                pass
 
-                try:
-                    value = value.replace('"', "")
-                except:
+            try:
+                value = value.replace('"', "")
+            except:
+                pass
+            
+            try:
+                if(('T' in value) and (len(value.replace(" ", "")) < 2)):
+                    value = True
+                elif('F' in value) and (len(value.replace(" ", "")) < 2):
+                    value = False
+                else:
                     pass
-                
-                try:
-                    if(('T' in value) and (len(value.replace(" ", "")) < 2)):
-                        value = True
-                    elif('F' in value) and (len(value.replace(" ", "")) < 2):
-                        value = False
-                    else:
-                        pass
-                except:
-                    pass
-                
-                header[key] = (value, comment)
-                
-                x+=1
-                
-                
-                
-            except Exception as e:
-                print(f"Error: {e} and at line {x} in {filename}")
-                continue
-    print(header.keys)            
+            except:
+                pass
+            
+            header[key] = (value, comment)
+            
+            x+=1
+            
+            
+            
+        except Exception as e:
+            print(f"Error: {e} and at line {x} in {header_text}")
+            continue
 
-def buildHeader(self, hdul, header, filename = None, cameraConfig = None):
+
+def buildFromTextFile(filename, header):
+    with open(filename, 'r') as f:
+        Header_from_text(f, header)
+
+
+
+
+def buildHeader(hdul, header, filename = None, header_text = None):
     if(filename is not None):
-        self.buildFromTextFile(filename, header)
+        buildFromTextFile(filename, header)
     else:
-        header['SIMPLE'] = (True, "file conforms to FITS standard")
-        header['BITPIX'] = (64, "number of bits per data pixel")
-        header['READMODE'] = ('IMAGE   ', "Readout Mode")
-        header['NAXIS'] = (2, 'number of array dimensions')
-        header['NAXIS1'] = (1025, 'some number')
-        header['NAXIS2'] = (1024, 'number 2')
-        header['EXTEND'] = (True, '')
+        Header_from_text(header_text, header)
 
     return
 
-def save_fits_data(self, data = None, savepath = None):
+def save_fits_data(data, savepath=None, header_text=None):
     if data is None:
         return 
     if savepath is None:
+        print("ERROR: No save path was provided. Saving data to current directory.")
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        savepath = f"{dir_path}/Camera_{self.serialNumber}"
+        savepath = dir_path + "/data"
     
     hdu = fits.PrimaryHDU(data)
     hdul = fits.HDUList([hdu])
-    hdr = self.buildHeader(hdul=hdul, header=hdul[0].header, filename=None)
+    hdr = buildHeader(hdul=hdul, header=hdul[0].header, filename=None)
     hdul.writeto(f"{savepath}.fits", overwrite=True)
 
 
