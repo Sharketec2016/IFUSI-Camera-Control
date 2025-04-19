@@ -4,13 +4,25 @@ import pandas as pd
 from time import sleep
 from astropy.io import fits
 import os
-# iXonSerialNumbers = [13703]
-
+from enum import Enum
+import logging as log
 '''
 class: AndorCamera
 description: This is a basic andor camera class. This class will contain all of the methods needed for configuring the andor cameras
 
 '''
+class CameraState(Enum):
+    CONNECTED = 1
+    DISCONNECTED = 2
+    ACQUIRING = 3
+    NOT_ACQUIRING = 4
+    CONFIGURED = 5
+    NOT_CONFIGURED = 6
+    ERROR = 7
+    
+
+
+
 class AndoriXonCamera():
     def __init__(self, camIndex, serialNumber):
         self.serialNumber = serialNumber
@@ -44,22 +56,32 @@ class AndoriXonCamera():
             'overflowBehavior': 'restart'
         }
         
-        self.is_connected = False
-        self.is_in_acquisition = False
-        self.is_configured = False
+        self.is_connected = CameraState.DISCONNECTED
+        self.is_in_acquisition = CameraState.NOT_ACQUIRING
+        self.is_configured = CameraState.NOT_CONFIGURED
         self.data = None
-        # print(f"Setting up camera {self.serialNumber} with default configuration")
-        # self.camera_configuration()
-
+        self.error = None
+        
+        self.logger = self.setup_logging() #for now implement the logging feature automatically. we might want to change that later if it takes up too much time. 
 
     def connection_status(self):
         if self.cameraObj.is_opened():
-            print(f"Camera {self.cameraObj.get_device_info()} is connected")
+            self.is_connected = CameraState.CONNECTED
+            # print(f"Camera {self.cameraObj.get_device_info()} is connected")
             return True
+        else:
+            self.is_connected = CameraState.DISCONNECTED
+            # print(f"Camera {self.serialNumber} is not connected")
+            
         return False
 
     def acquisition_status(self):
-        return self.cameraObj.get_status()
+        if self.cameraObj.get_status() == 'acquiring':
+            self.is_in_acquisition = CameraState.ACQUIRING
+        else:
+            self.is_in_acquisition = CameraState.NOT_ACQUIRING
+            
+        return self.is_in_acquisition
 
     def camera_configuration(self, cameraDict = None):
         '''
@@ -72,7 +94,7 @@ class AndoriXonCamera():
             
         else:
             configDict = self.cam_config
-    
+        self.logger.info(f"Configuring camera {self.serialNumber} with config: {configDict}")
         try:
                 self.cameraObj.set_acquisition_mode(mode = configDict['acquisitionMode'])
                 self.cameraObj.set_trigger_mode(mode = configDict['triggeringMode'])
@@ -91,14 +113,17 @@ class AndoriXonCamera():
                                     )
                 self.cameraObj.set_vsspeed(configDict['verticalShift']['shiftSpeed'])
                 self.cameraObj.set_temperature(configDict['temperatureSetpoint'])
-
+                self.acquistion_configuration(cameraDict)
 
                 if not self.cameraObj.is_metadata_enabled():
                     self.cameraObj.enable_metadata()
 
+                self.is_configured = CameraState.CONFIGURED
+                self.logger.info(f"Camera {self.serialNumber} configured successfully")
                 return True
         except Exception as e:
-            print(f"Camera {self.serialNumber} configuration failed: {e}")
+            self.logger.error(f"Camera {self.serialNumber} configuration failed: {e}")
+            self.is_configured = CameraState.NOT_CONFIGURED
             return False
     
     def acquistion_configuration(self, cameraDict):
@@ -114,11 +139,12 @@ class AndoriXonCamera():
         try:
             self.cameraObj = Andor.AndorSDK2Camera(idx=self.camIndex, temperature=None, fan_mode='full', amp_mode=None)
             if self.cameraObj.is_opened():
-                self.is_connected = True
-                print(f"Camera {self.serialNumber} is connected")
+                self.is_connected = CameraState.CONNECTED
+                self.logger.info(f"Camera {self.serialNumber} is connected")
                 return True
             else:
-                print(f"Camera {self.serialNumber} is not connected")
+                self.logger.error(f"Camera {self.serialNumber} is not connected")
+                self.is_connected = CameraState.DISCONNECTED
                 return False
         except Exception as e:
             print(f"Error connecting to camera {self.serialNumber}: {e}")
@@ -128,15 +154,32 @@ class AndoriXonCamera():
         try:
             if self.cameraObj.is_opened():
                 self.cameraObj.close()
-                self.is_connected = False
-                print(f"Camera {self.serialNumber} is disconnected")
+                self.is_connected = CameraState.DISCONNECTED
+                self.logger.info(f"Camera {self.serialNumber} is disconnected")
                 return True
             else:
-                print(f"Camera {self.serialNumber} is already disconnected")
+                self.logger.info(f"Camera {self.serialNumber} is already disconnected")
                 return False
         except Exception as e:
-            print(f"Error disconnecting camera {self.serialNumber}: {e}")
+            self.logger.error(f"Error disconnecting camera {self.serialNumber}: {e}")
+            self.is_connected = CameraState.ERROR
             return False
-            
+    
+    def setup_logging(self):
+        logger = log.getLogger(f"Camera-{self.serialNumber}")
+        logger.setLevel(log.DEBUG)
+        
+        if not logger.handlers:
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            if not os.path.exists(f"{dir_path}/logs"):
+                os.makedirs(f"{dir_path}/logs")
+            save_path = f"{dir_path}/logs"
+            handler = log.FileHandler(f'{save_path}/camera_{self.serialNumber}.log')
+            handler.setLevel(log.DEBUG)
+            formatter = log.Formatter('[%(asctime)s] %(name)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+        return logger
+        
 
 

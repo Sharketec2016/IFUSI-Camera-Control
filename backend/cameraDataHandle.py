@@ -52,13 +52,9 @@ def Header_from_text(header_text, header):
             print(f"Error: {e} and at line {x} in {header_text}")
             continue
 
-
 def buildFromTextFile(filename, header):
     with open(filename, 'r') as f:
         Header_from_text(f, header)
-
-
-
 
 def buildHeader(hdul, header, filename = None, header_text = None):
     if(filename is not None):

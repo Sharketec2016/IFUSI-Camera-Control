@@ -15,9 +15,11 @@ import threading
 import time
 from queue import Queue
 from typing import Dict, List
-from backend.cameraHandle import *
+from backend.cameraLogging import *
 from backend.cameraConfig import *
 from backend.cameraDataHandle import *
+import logging as log
+import sys
 
 
 save_data_path = ""
@@ -146,8 +148,7 @@ class CameraWorker:
                     print(f"Saved {self.acquisition_count} frames for camera {self.camera.serialNumber}")
                 except Exception as e:
                     print(f"Error saving data for camera {self.camera.serialNumber}: {e}")
-            
-            
+                     
     def _handle_configure(self, settings):
         """Handle camera configuration"""
         try:
@@ -159,11 +160,13 @@ class CameraWorker:
 
 # Main application class
 class CameraMonitorApp:
-    def __init__(self, root):
+    def __init__(self, root, debugLogging = False):
         self.root = root
         self.root.title("Camera Monitoring System")
         self.root.geometry("1200x800")
         self.root.minsize(800, 600)
+        self.logger = self._setup_logging(debugLogging)
+
         
         # Initialize camera drivers: TODO Change this to the actual camera driver library.
         # self.camera1 = AndoriXonCamera(camIndex=0, serialNumber=13703)
@@ -191,8 +194,10 @@ class CameraMonitorApp:
 
         self.queryingConnection = False
         
+        
     def setup_camera_workers(self):
         """Initialize worker threads for each camera"""
+        self.logger.info("Setting up camera workers")
         for camera in self.cameras:
             queue = Queue()
             worker = CameraWorker(camera, queue)
@@ -201,6 +206,7 @@ class CameraMonitorApp:
             
     def create_ui(self):
         """Create the main UI elements"""
+        self.logger.info("Creating UI")
         # Create the main frame
         self.main_frame = ttk.Frame(self.root, padding="10")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
@@ -253,6 +259,7 @@ class CameraMonitorApp:
         self.save_btn.pack(side=tk.RIGHT, padx=5)
         
     def save_data(self):
+        self.logger.info("Saving data")
         if self.has_run_experiment:
             attempt, result_str = False, ""
             try:
@@ -274,11 +281,13 @@ class CameraMonitorApp:
             finally:
                 if attempt:
                     messagebox.showinfo("Success", result_str)
+                    self.logger.info(f"{result_str}")
                 else:
                     messagebox.showerror("Error", result_str)
+                    self.logger.error(f"{result_str}")
         else:
             messagebox.showerror("Error", "No experiment data to save. Please run an experiment first.")
-
+            self.logger.error(f"No experiment data to save. Please run an experiment first.")
 
     def setup_status_display(self):
         """
@@ -302,6 +311,7 @@ class CameraMonitorApp:
         """
         """Setup the camera status display"""
         # Title label
+        self.logger.info("Setting up camera status display")
         status_title = ttk.Label(self.status_frame, text="Camera Status Monitor", font=("Arial", 14, "bold"))
         status_title.pack(pady=10)
         
@@ -543,7 +553,6 @@ class CameraMonitorApp:
                 val = labels["status_label"]
                 val.config(text="Disconnected")
 
-
     def refresh_all(self):
         """Refresh all camera statuses"""
         self.queryingConnection = True
@@ -554,7 +563,6 @@ class CameraMonitorApp:
                 self.update_camera_ui(serial, False)
         self.queryingConnection = False
         self.status_frame.update()
-
 
     def connect_all_cameras(self):
         """Connect to all cameras - placeholder function"""
@@ -694,7 +702,7 @@ class CameraMonitorApp:
         for camera in self.cameras:
             try:    
                 camera.camera_configuration()
-                camera.acquisition_configuration()
+                # camera.acquisition_configuration()
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to configure camera {camera.serialNumber}: {str(e)}")
                 return
@@ -735,10 +743,41 @@ class CameraMonitorApp:
         self.start_monitoring()
         messagebox.showinfo("Complete", "Experiment completed successfully!")
     
-  
+    def _setup_logging(self, debugLogging):
+        logger = log.getLogger(f"CameraApplication")
+        if(debugLogging):
+            logger.setLevel(log.DEBUG)
+        else:
+            logger.setLevel(log.INFO)
+        if not logger.handlers:
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            if not os.path.exists(f"{dir_path}/logs"):
+                os.makedirs(f"{dir_path}/logs")
+            save_path = f"{dir_path}/logs"
+            handler = log.FileHandler(f'{save_path}/cameraApplication.log')
+            
+            if(debugLogging):
+                handler.setLevel(log.DEBUG)
+            else:
+                handler.setLevel(log.INFO)
+            
+            
+            formatter = log.Formatter('[%(asctime)s] %(name)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+        logger.info(f"Logging level set to {'DEBUG' if debugLogging else 'INFO'}")
+        return logger
+
 def main():
+    args = sys.argv
+    
+    debug_mode = "-d" in args
+    
+    
+    
+    
     root = tk.Tk()
-    app = CameraMonitorApp(root)
+    app = CameraMonitorApp(root, debugLogging=debug_mode)
     root.mainloop()
 
 
