@@ -24,10 +24,6 @@ import sys
 
 save_data_path = ""
 
-
-
-
-
 class CameraDrivers:
     def get_camera_status(self, serial_number):
         """
@@ -156,8 +152,6 @@ class CameraWorker:
         except Exception as e:
             print(f"Error configuring camera {self.camera.serialNumber}: {e}")
 
-
-
 # Main application class
 class CameraMonitorApp:
     def __init__(self, root, debugLogging = False):
@@ -226,10 +220,12 @@ class CameraMonitorApp:
         self.notes_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.notes_frame, text="FITS Header")
         
+
+        
         
         # # Create camera preview tab: TODO may add this back later as a sanity check when using the cameras right before a run.
-        # self.preview_frame = ttk.Frame(self.notebook)
-        # self.notebook.add(self.preview_frame, text="Camera Preview")
+        self.preview_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.preview_frame, text="Camera Preview")
         
         # Setup the camera status display
         self.setup_status_display()
@@ -240,7 +236,7 @@ class CameraMonitorApp:
         self.setup_notes_display()
         
         # # Setup the camera preview options
-        # self.setup_preview_options()
+        self.setup_preview_options()
         
         # Button frame at the bottom
         self.button_frame = ttk.Frame(self.main_frame)
@@ -769,12 +765,15 @@ class CameraMonitorApp:
         return logger
 
 def main():
-    args = sys.argv
+    args = sys.argv #pass in command line arguments.
+    if len(args) > 1 and (args[1] == "--help" or args[1] == '-h' or args[1] == '-H'):
+        print("Usage: python main.py [-d]")
+        print("Options:")
+        print("  -d    Enable debug logging")
+        return
     
-    debug_mode = "-d" in args
     
-    
-    
+    debug_mode = "-d" in args 
     
     root = tk.Tk()
     app = CameraMonitorApp(root, debugLogging=debug_mode)

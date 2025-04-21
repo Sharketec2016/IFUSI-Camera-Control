@@ -1,5 +1,6 @@
 import os
 from astropy.io import fits
+from datetime import datetime
 
 def Header_from_text(header_text, header):
     x = 0
@@ -75,6 +76,41 @@ def save_fits_data(data, savepath=None, header_text=None):
     hdu = fits.PrimaryHDU(data)
     hdul = fits.HDUList([hdu])
     hdr = buildHeader(hdul=hdul, header=hdul[0].header, filename=None)
-    hdul.writeto(f"{savepath}.fits", overwrite=True)
+    curr_date = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
+    hdul.writeto(f"{savepath}/{curr_date}.fits", overwrite=True)
 
-
+def save_csv_data(data, savepath=None, header_text=None):
+    if data is None:
+        return 
+    if savepath is None:
+        print("ERROR: No save path was provided. Saving data to current directory.")
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        savepath = dir_path + "/data/csv_data"
+    
+    import pandas as pd
+    df = pd.DataFrame(data)
+    curr_date = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
+    
+    df.to_csv(f"{savepath}/{curr_date}.csv", index=False)
+    
+    if header_text is not None:
+        with open(f"{savepath}/{curr_date}--header.txt", 'w') as f:
+            f.write(header_text)
+                     
+def save_xlsx_data(data, savepath=None, header_text=None):
+    if data is None:
+        return 
+    if savepath is None:
+        print("ERROR: No save path was provided. Saving data to current directory.")
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        savepath = dir_path + "/data/xlsx_data"
+    
+    import pandas as pd
+    df = pd.DataFrame(data)
+    curr_date = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
+    
+    df.to_excel(f"{savepath}/{curr_date}.xlsx")
+    
+    if header_text is not None:
+        with open(f"{savepath}/{curr_date}--header.txt", 'w') as f:
+            f.write(header_text)
