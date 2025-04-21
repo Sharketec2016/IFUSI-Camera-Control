@@ -30,31 +30,32 @@ class AndoriXonCamera():
         self.cam_config = dict()
         self.camIndex = camIndex
         self.cameraObj = None
-        self.cam_config = {
-            'acquisitionMode': "kinetic",
-            'triggeringMode': 'int',
-            'readoutMode': 'image',
-            'exposureTime': 0.04,
-            'acquistionNumber': 1,
-            'frameTransfer': True,
-            'verticalShift': {'shiftSpeed': 0.6, 'clockVoltageAmplitude': None},
-            'horizontalShift': {'readoutRate': '30 MHz', 'preAmpGain': 'Gain 1', 'outputAmp': 'Electron Multiplying'},
-            'baselineClamp': True,
-            'emGain': {'state': False, 'gainLevel': 0},
-            'shutterSettings': {'mode': 'open'},
-            'fanLevel': 'full',
-            'ampMode': {'channel': self.cameraObj.get_all_amp_modes()[0].channel,
-                        'oamp': self.cameraObj.get_all_amp_modes()[0].oamp,
-                        'hsspeed': self.cameraObj.get_all_amp_modes()[0].hsspeed,
-                        'preamp': self.cameraObj.get_all_amp_modes()[0].preamp
-                        },
-            'temperatureSetpoint': 20
-        }
-        self.cam_config['AcqConfiguration'] = {
-            'acqMode': 'kinetic',
-            'nframes': 10,
-            'overflowBehavior': 'restart'
-        }
+        self.cam_config = None
+        # self.cam_config = {
+        #     'acquisitionMode': "kinetic",
+        #     'triggeringMode': 'int',
+        #     'readoutMode': 'image',
+        #     'exposureTime': 0.04,
+        #     'acquistionNumber': 1,
+        #     'frameTransfer': True,
+        #     'verticalShift': {'shiftSpeed': 0.6, 'clockVoltageAmplitude': None},
+        #     'horizontalShift': {'readoutRate': '30 MHz', 'preAmpGain': 'Gain 1', 'outputAmp': 'Electron Multiplying'},
+        #     'baselineClamp': True,
+        #     'emGain': {'state': False, 'gainLevel': 0},
+        #     'shutterSettings': {'mode': 'open'},
+        #     'fanLevel': 'full',
+        #     'ampMode': {'channel': self.cameraObj.get_all_amp_modes()[0].channel,
+        #                 'oamp': self.cameraObj.get_all_amp_modes()[0].oamp,
+        #                 'hsspeed': self.cameraObj.get_all_amp_modes()[0].hsspeed,
+        #                 'preamp': self.cameraObj.get_all_amp_modes()[0].preamp
+        #                 },
+        #     'temperatureSetpoint': 20
+        # }
+        # self.cam_config['AcqConfiguration'] = {
+        #     'acqMode': 'kinetic',
+        #     'nframes': 10,
+        #     'overflowBehavior': 'restart'
+        # }
         
         self.is_connected = CameraState.DISCONNECTED
         self.is_in_acquisition = CameraState.NOT_ACQUIRING
@@ -93,7 +94,32 @@ class AndoriXonCamera():
             configDict = cameraDict['CameraConfiguration']
             
         else:
-            configDict = self.cam_config
+            configDict = {
+            'acquisitionMode': "kinetic",
+            'triggeringMode': 'int',
+            'readoutMode': 'image',
+            'exposureTime': 0.04,
+            'acquistionNumber': 1,
+            'frameTransfer': True,
+            'verticalShift': {'shiftSpeed': 0.6, 'clockVoltageAmplitude': None},
+            'horizontalShift': {'readoutRate': '30 MHz', 'preAmpGain': 'Gain 1', 'outputAmp': 'Electron Multiplying'},
+            'baselineClamp': True,
+            'emGain': {'state': False, 'gainLevel': 0},
+            'shutterSettings': {'mode': 'open'},
+            'fanLevel': 'full',
+            'ampMode': {'channel': self.cameraObj.get_all_amp_modes()[0].channel,
+                        'oamp': self.cameraObj.get_all_amp_modes()[0].oamp,
+                        'hsspeed': self.cameraObj.get_all_amp_modes()[0].hsspeed,
+                        'preamp': self.cameraObj.get_all_amp_modes()[0].preamp
+                        },
+            'temperatureSetpoint': 20
+        }
+        configDict['AcqConfiguration'] = {
+            'acqMode': 'kinetic',
+            'nframes': 10,
+            'overflowBehavior': 'restart'
+        }
+        self.cam_config = configDict
         self.logger.info(f"Configuring camera {self.serialNumber} with config: {configDict}")
         try:
                 self.cameraObj.set_acquisition_mode(mode = configDict['acquisitionMode'])

@@ -15,7 +15,7 @@ import threading
 import time
 from queue import Queue
 from typing import Dict, List
-from backend.cameraLogging import *
+# from backend.cameraLogging import *
 from backend.cameraConfig import *
 from backend.cameraDataHandle import *
 import logging as log
@@ -169,15 +169,15 @@ class CameraMonitorApp:
 
         
         # Initialize camera drivers: TODO Change this to the actual camera driver library.
-        # self.camera1 = AndoriXonCamera(camIndex=0, serialNumber=13703)
-        # self.camera2 = AndoriXonCamera(camIndex=1, serialNumber=12345)
-        # self.camera3 = AndoriXonCamera(camIndex=2, serialNumber=67890)
+        self.camera1 = AndoriXonCamera(camIndex=0, serialNumber=13703)
+        self.camera2 = AndoriXonCamera(camIndex=1, serialNumber=12606)
+        self.camera3 = AndoriXonCamera(camIndex=2, serialNumber=12574)
         # self.camera4 = AndoriXonCamera(camIndex=3, serialNumber=13579)
-        # self.cameras = [self.camera1, self.camera2, self.camera3, self.camera4]
-        self.cameras = [] #TODO remove this later.
+        self.cameras = [self.camera1, self.camera2, self.camera3]#, self.camera4]
+        # self.cameras = [] #TODO remove this later.
         # Get camera serial numbers: TODO change this to search for all connected devices and find the cameras that way
         # self.camera_serials = [self.camera1.serialNumber, self.camera2.serialNumber, self.camera3.serialNumber, self.camera4.serialNumber]
-        self.camera_serials = ["1234567", "7654321", "9876543", "5432109"]
+        self.camera_serials = ["13703", "12606", "12574"]#, "5432109"]
         # Create UI elements
         self.create_ui()
         
