@@ -172,6 +172,14 @@ class CameraMonitorApp:
         # Get camera serial numbers: TODO change this to search for all connected devices and find the cameras that way
         # self.camera_serials = [self.camera1.serialNumber, self.camera2.serialNumber, self.camera3.serialNumber, self.camera4.serialNumber]
         self.camera_serials = ["13703", "12606", "12574"]#, "5432109"]
+        
+        self.cameras2 = {
+            "13703": self.camera1,
+            "12606": self.camera2,
+            "12574": self.camera3,
+            # "5432109": self.camera4
+        }
+        
         # Create UI elements
         self.create_ui()
         
@@ -187,6 +195,11 @@ class CameraMonitorApp:
         self.has_run_experiment = False
 
         self.queryingConnection = False
+        
+        self.config_labels_dict = dict()
+        self.config_entrys_dict = dict()
+        self.config_serial_number = None
+        
         
         
     def setup_camera_workers(self):
@@ -231,7 +244,7 @@ class CameraMonitorApp:
         self.setup_status_display()
         
         # Setup the camera configuration options
-        self.setup_config_options()
+        # self.setup_config_options()
         
         self.setup_notes_display()
         
@@ -348,6 +361,23 @@ class CameraMonitorApp:
         disconnect_all_btn = ttk.Button(ops_frame, text="Disconnect All", command=self.disconnect_all_cameras)
         disconnect_all_btn.pack(side=tk.LEFT, padx=5)
     
+    
+    
+    def save_values(self):
+        serialNumber = self.selected_camera.get()
+        # self.config_serial_number = serialNumber
+        configDict = self.cameras2[serialNumber].cam_config
+        for key, value in configDict.items():
+            if type(value) == dict:
+                for k2, v2 in value.items():
+                    value = self.config_entrys_dict[key][k2].get()
+                    self.config_labels_dict[key][k2].config(text=value)
+                    self.cameras2[serialNumber].cam_config[key][k2] = value
+            else:
+                value = self.config_entrys_dict[key].get()
+                self.config_labels_dict[key].config(text=value)
+                self.cameras2[serialNumber].cam_config[key] = value
+        
     def setup_config_options(self):
         """Setup the camera configuration options"""
         # Title label
@@ -368,34 +398,53 @@ class CameraMonitorApp:
         camera_select.pack(side=tk.LEFT, padx=5)
         camera_select.bind('<<ComboboxSelected>>', self.on_camera_selected)
         
-        # Settings frame
-        settings_frame = ttk.LabelFrame(self.config_frame, text="Camera Settings")
-        settings_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        left_frame = ttk.Frame(self.config_frame, padding=10)
+        right_frame = ttk.Frame(self.config_frame, padding=10)
+        left_frame.pack(side="left", fill="both", expand=True)
+        right_frame.pack(side="right", fill="both", expand=True)
+                
         
-        # Example settings - replace with your actual camera settings
-        # Exposure
-        exposure_frame = ttk.Frame(settings_frame)
-        exposure_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(exposure_frame, text="Exposure:").pack(side=tk.LEFT, padx=5)
-        self.exposure_var = tk.DoubleVar(value=10.0)
-        
-        self.exposure_text = ttk.Entry(exposure_frame, text = "Enter your text here: ")
-        # exposure_scale = ttk.Scale(exposure_frame, from_=0.1, to=100.0, variable=self.exposure_var, orient=tk.HORIZONTAL, length=300)
-        self.exposure_text.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
-        ttk.Label(exposure_frame, textvariable=self.exposure_var).pack(side=tk.LEFT, padx=5)
-        
-        # Gain
-        gain_frame = ttk.Frame(settings_frame)
-        gain_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(gain_frame, text="Gain:").pack(side=tk.LEFT, padx=5)
-        self.gain_var = tk.DoubleVar(value=1.0)
-        gain_scale = ttk.Scale(gain_frame, from_=0.0, to=10.0, variable=self.gain_var, orient=tk.HORIZONTAL, length=300)
-        gain_scale.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
-        ttk.Label(gain_frame, textvariable=self.gain_var).pack(side=tk.LEFT, padx=5)
-        
-        # Save settings button
-        save_btn = ttk.Button(settings_frame, text="Apply Settings", command=self.apply_settings)
-        save_btn.pack(pady=10)
+        try:
+            serialNumber = self.selected_camera.get()
+            self.config_serial_number = serialNumber
+            configDict = self.cameras2[serialNumber].cam_config
+            for key, value in configDict.items():
+                
+                if type(value) == dict:    
+                    for k2, v2 in value.items():
+                        label = ttk.Label(left_frame, text=f"{key}.{k2}:")
+                        label.pack(anchor='w')
+                        entry = ttk.Entry(left_frame, width=20)
+                        entry.pack(anchor='w', pady=2)
+                        self.config_entrys_dict[key][k2] = entry
+                else:    
+                    label = ttk.Label(left_frame, text=f"{key}:")
+                    label.pack(anchor='w')
+                    entry = ttk.Entry(left_frame, width=20)
+                    entry.pack(anchor='w', pady=2)
+                    self.config_entrys_dict[key] = entry
+                    
+            save_button = ttk.Button(left_frame, text="Save", command=self.save_values)
+            save_button.pack(pady=10)
+            
+            display_values = []
+            ttk.Label(right_frame, text="Saved Values:", font=('Arial', 12, 'bold')).pack(anchor="w")
+            for key, value in configDict.items():
+                if type(value) == dict():
+                    for k2, v2 in value.items():
+                        label = ttk.Label(right_frame, text=f"{key}.{k2}:")
+                        label.pack(anchor="w")
+                        label = ttk.Label(right_frame, text="", relief="groove", padding=5, width=20)
+                        label.pack(anchor="w", pady=2)
+                        self.config_labels_dict[key][k2] = label
+                else:
+                    label = ttk.Label(right_frame, text="", relief="groove", padding=5, width=20)
+                    label.pack(anchor="w", pady=2)
+                    self.config_labels_dict[key] = label
+        except Exception as e:
+            pass
+            # print(f"Error: {e}")
+            # messagebox.showerror("Error", f"Failed to load camera configuration: {str(e)}") 
     
     def setup_preview_options(self):
         """Setup the camera preview options"""
@@ -476,6 +525,9 @@ class CameraMonitorApp:
         load_btn = ttk.Button(button_frame, text="Load Header", 
                             command=self.load_notes)
         load_btn.pack(side=tk.LEFT, padx=5)
+
+    def update_config_options(self):
+        self.result_label.config(text=f"you entered: {self.exposure_text.get()}")
 
     def save_notes(self):
         """Save the notes to a file using file dialog"""
@@ -569,6 +621,8 @@ class CameraMonitorApp:
                 tmp_cam = AndoriXonCamera(camIndex=i, serialNumber=serial)
                 if tmp_cam.connect():
                     self.cameras[i] = tmp_cam
+                    tmp_cam.camera_configuration()
+                    self.setup_config_options()
                 else:
                     messagebox.showerror("Error", f"Failed to connect to camera {serial}")
                     continue
@@ -595,25 +649,25 @@ class CameraMonitorApp:
     def on_camera_selected(self, event):
         """Handle camera selection change"""
         # Load the settings for the selected camera - implement this with your actual logic
-        serial = self.selected_camera.get()
-        messagebox.showinfo("Camera Selected", f"Loading settings for camera {serial}")
 
-        # Here you would update the UI elements with the selected camera's settings
-
+        serialNumber = self.selected_camera.get()
+        # self.config_serial_number = serialNumber
+        configDict = self.cameras2[serialNumber].cam_config
+        for key, value in configDict.items():
+            if type(value) == dict:
+                for k2, v2 in value.items():
+                    self.config_labels_dict[key][k2].config(text=v2)
+            else:
+                self.config_labels_dict[key].config(text=value)
+            
     def apply_settings(self):
         """Apply settings to the selected camera"""
         serial = self.selected_camera.get()
         settings = {
-        "exposure": self.exposure_text.get(),
-        "gain": self.gain_var.get()
+        "exposure": self.exposure_text.get()
         }
         print(settings['exposure'])
-        # success = self.camera_drivers.connection_status(serial, settings)
-
-        # if success:
-        #     messagebox.showinfo("Success", f"Settings applied to camera {serial}")
-        # else:
-        #     messagebox.showerror("Error", f"Failed to apply settings to camera {serial}")
+        self.update_config_options()
 
     def toggle_preview(self, start):
         """Toggle camera preview on/off"""
