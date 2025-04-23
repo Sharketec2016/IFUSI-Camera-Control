@@ -9,6 +9,7 @@ Description: Main executable frontend for handing the iXAndor cameras.
 
 import tkinter as tk
 from tkinter import filedialog
+from tkinter.font import Font
 from tkinter import ttk, messagebox
 from tkinter.messagebox import showinfo
 import threading
@@ -160,6 +161,7 @@ class CameraMonitorApp:
         self.root.geometry("1200x800")
         self.root.minsize(800, 600)
         self.logger = self._setup_logging(debugLogging)
+        self.custom_font = Font(family="Helvetica", size=14, weight="bold")
 
         
         # Initialize camera drivers: TODO Change this to the actual camera driver library.
@@ -181,7 +183,7 @@ class CameraMonitorApp:
         }
         
         # Create UI elements
-        self.create_ui()
+      
         
         
         self.monitoring = True
@@ -200,7 +202,32 @@ class CameraMonitorApp:
         self.config_entrys_dict = dict()
         self.config_serial_number = None
         
-        
+        self.exampleConfig = {
+            'acquisitionMode': "kinetic",
+            'triggeringMode': 'int',
+            'readoutMode': 'image',
+            'exposureTime': 0.04,
+            'acquistionNumber': 1,
+            'frameTransfer': True,
+            'verticalShift': {'shiftSpeed': 0.6, 'clockVoltageAmplitude': None},
+            'horizontalShift': {'readoutRate': '30 MHz', 'preAmpGain': 'Gain 1', 'outputAmp': 'Electron Multiplying'},
+            'baselineClamp': True,
+            'emGain': {'state': False, 'gainLevel': 0},
+            'shutterSettings': {'mode': 'open'},
+            'fanLevel': 'full',
+            'ampMode': {'channel': 0,
+                        'oamp': 1,
+                        'hsspeed': 100,
+                        'preamp': 200
+                        },
+            'temperatureSetpoint': 20
+        }
+        self.exampleConfig['AcqConfiguration'] = {
+            'acqMode': 'kinetic',
+            'nframes': 10,
+            'overflowBehavior': 'restart'
+        }
+        self.create_ui()
         
     def setup_camera_workers(self):
         """Initialize worker threads for each camera"""
@@ -244,7 +271,7 @@ class CameraMonitorApp:
         self.setup_status_display()
         
         # Setup the camera configuration options
-        # self.setup_config_options()
+        self.setup_config_options()
         
         self.setup_notes_display()
         
@@ -398,53 +425,82 @@ class CameraMonitorApp:
         camera_select.pack(side=tk.LEFT, padx=5)
         camera_select.bind('<<ComboboxSelected>>', self.on_camera_selected)
         
-        left_frame = ttk.Frame(self.config_frame, padding=10)
-        right_frame = ttk.Frame(self.config_frame, padding=10)
-        left_frame.pack(side="left", fill="both", expand=True)
-        right_frame.pack(side="right", fill="both", expand=True)
-                
+        self.update_button = ttk.Button(selection_frame, text="Update Settings", command=self.update_config_options)
+        self.update_button.pack(side=tk.LEFT, padx=5)
         
-        try:
-            serialNumber = self.selected_camera.get()
-            self.config_serial_number = serialNumber
-            configDict = self.cameras2[serialNumber].cam_config
-            for key, value in configDict.items():
-                
-                if type(value) == dict:    
-                    for k2, v2 in value.items():
-                        label = ttk.Label(left_frame, text=f"{key}.{k2}:")
-                        label.pack(anchor='w')
-                        entry = ttk.Entry(left_frame, width=20)
-                        entry.pack(anchor='w', pady=2)
-                        self.config_entrys_dict[key][k2] = entry
-                else:    
-                    label = ttk.Label(left_frame, text=f"{key}:")
-                    label.pack(anchor='w')
-                    entry = ttk.Entry(left_frame, width=20)
-                    entry.pack(anchor='w', pady=2)
-                    self.config_entrys_dict[key] = entry
+        
+        
+        self.config_canvas = tk.Canvas(self.config_frame)
+        self.config_canvas.pack(side="left", fill="both", expand=True)
+        
+        self.config_scrollbar = ttk.Scrollbar(self.config_frame, orient="vertical", command=self.config_canvas.yview)
+        self.config_scrollbar.pack(side="right", fill="y")
+        self.config_canvas.configure(yscrollcommand=self.config_scrollbar.set)
+        self.config_canvas.bind('<Configure>', lambda e: self.config_canvas.configure(scrollregion=self.config_canvas.bbox("all")))
+        self.scrollable_frame = ttk.Frame(self.config_canvas)
+        
+        
+        self.config_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        
+        self.config_left_frame = ttk.Frame(self.scrollable_frame, padding=10) #this will contain the entry boxes for users to put values
+        self.config_right_frame = ttk.Frame(self.scrollable_frame, padding=10) #this will show the current values for the camera configs.
+        self.config_left_frame.pack(side="left", fill="both", expand=True)
+        self.config_right_frame.pack(side="right", fill="both", expand=True)
+             
+        self.current_settings = ttk.Label(self.config_left_frame, text="Current Settings", font=self.custom_font)
+        self.current_settings.grid(row=0, column=7, padx=(135, 1), pady=5)
+             
+        
+        i = 1
+        for key, value in self.exampleConfig.items():
+            if type(value) is dict:
+                tmp_label = ttk.Label(self.config_left_frame, text=f"{key}", font=self.custom_font)
+                tmp_label.grid(row=i, column=0, sticky="w", padx=2, pady=2)
+                i+=1
+                for k2, v2 in value.items():
                     
-            save_button = ttk.Button(left_frame, text="Save", command=self.save_values)
-            save_button.pack(pady=10)
-            
-            display_values = []
-            ttk.Label(right_frame, text="Saved Values:", font=('Arial', 12, 'bold')).pack(anchor="w")
-            for key, value in configDict.items():
-                if type(value) == dict():
-                    for k2, v2 in value.items():
-                        label = ttk.Label(right_frame, text=f"{key}.{k2}:")
-                        label.pack(anchor="w")
-                        label = ttk.Label(right_frame, text="", relief="groove", padding=5, width=20)
-                        label.pack(anchor="w", pady=2)
-                        self.config_labels_dict[key][k2] = label
-                else:
-                    label = ttk.Label(right_frame, text="", relief="groove", padding=5, width=20)
-                    label.pack(anchor="w", pady=2)
-                    self.config_labels_dict[key] = label
-        except Exception as e:
-            pass
-            # print(f"Error: {e}")
-            # messagebox.showerror("Error", f"Failed to load camera configuration: {str(e)}") 
+                    
+                    tmp2_label = ttk.Label(self.config_left_frame, text=f"{k2}", font=self.custom_font)
+                    tmp2_label.grid(row=i, column=2, sticky="w", padx=0, pady=2)
+                    
+                    curr_label = ttk.Label(self.config_left_frame, text=f"{v2}", font=self.custom_font)
+                    curr_label.grid(row=i, column=7, sticky="w", padx=(135, 1), pady=2)
+                    
+                    tmp_entry = ttk.Entry(self.config_left_frame, width=20)
+                    tmp_entry.grid(row=i, column=3, padx=20, pady=2)
+                    
+                    try:
+                        self.config_labels_dict[key].update({k2: curr_label})
+                        self.config_entrys_dict[key].update({k2: tmp_entry})
+                    except:
+                        self.config_labels_dict.update({key: {k2: curr_label}})
+                        self.config_entrys_dict.update({key: {k2: tmp_entry}})
+                    
+                    i+=1
+            else:
+                tmp_label = ttk.Label(self.config_left_frame, text=f"{key}", font=self.custom_font)
+                tmp_label.grid(row=i, column=0, sticky="w", padx=5, pady=2)
+                
+                curr_label = ttk.Label(self.config_left_frame, text=f"{value}", font=self.custom_font)
+                curr_label.grid(row=i, column=7, sticky="w", padx=(135, 1), pady=2)
+                
+                tmp_entry = ttk.Entry(self.config_left_frame, width=20)
+                tmp_entry.grid(row=i, column=3, padx=35, pady=2)
+                
+                try:
+                    self.config_labels_dict[key] = curr_label
+                    self.config_entrys_dict[key] = tmp_entry
+                except:
+                    self.config_labels_dict.update({key: curr_label})
+                    self.config_entrys_dict.update({key: tmp_entry})
+            i+=1
+        
+        
+        
+        
+        
+        
+        
     
     def setup_preview_options(self):
         """Setup the camera preview options"""
@@ -527,7 +583,22 @@ class CameraMonitorApp:
         load_btn.pack(side=tk.LEFT, padx=5)
 
     def update_config_options(self):
-        self.result_label.config(text=f"you entered: {self.exposure_text.get()}")
+        for key, value in self.config_labels_dict.items():
+            if type(value) is dict:
+                for k2, v2 in value.items():
+                    
+                    tmp_val= self.config_entrys_dict[key][k2].get()
+                    if tmp_val == "":
+                        continue
+                    else:
+                        v2.config(text = tmp_val)
+            else:
+                tmp_val = self.config_entrys_dict[key].get()
+                if tmp_val == "":
+                    continue
+                else:
+                    value.config(text = tmp_val)
+
 
     def save_notes(self):
         """Save the notes to a file using file dialog"""
@@ -650,15 +721,8 @@ class CameraMonitorApp:
         """Handle camera selection change"""
         # Load the settings for the selected camera - implement this with your actual logic
 
-        serialNumber = self.selected_camera.get()
-        # self.config_serial_number = serialNumber
-        configDict = self.cameras2[serialNumber].cam_config
-        for key, value in configDict.items():
-            if type(value) == dict:
-                for k2, v2 in value.items():
-                    self.config_labels_dict[key][k2].config(text=v2)
-            else:
-                self.config_labels_dict[key].config(text=value)
+        self.update_config_options()
+        
             
     def apply_settings(self):
         """Apply settings to the selected camera"""
