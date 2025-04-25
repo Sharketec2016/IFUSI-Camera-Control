@@ -89,7 +89,7 @@ class AndoriXonCamera():
                         },
             'temperatureSetpoint': 20
         }
-        configDict['AcqConfiguration'] = {
+        configDict['acqconfiguration'] = {
             'acqMode': 'kinetic',
             'nframes': 10,
             'overflowBehavior': 'restart'

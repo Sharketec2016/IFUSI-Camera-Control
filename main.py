@@ -21,6 +21,7 @@ from backend.cameraConfig import *
 from backend.cameraDataHandle import *
 import logging as log
 import sys
+from pprint import pprint
 
 
 save_data_path = ""
@@ -222,7 +223,7 @@ class CameraMonitorApp:
                         },
             'temperatureSetpoint': 20
         }
-        self.exampleConfig['AcqConfiguration'] = {
+        self.exampleConfig['acqconfiguration'] = {
             'acqMode': 'kinetic',
             'nframes': 10,
             'overflowBehavior': 'restart'
@@ -425,7 +426,7 @@ class CameraMonitorApp:
         camera_select.pack(side=tk.LEFT, padx=5)
         camera_select.bind('<<ComboboxSelected>>', self.on_camera_selected)
         
-        self.update_button = ttk.Button(selection_frame, text="Update Settings", command=self.update_config_options)
+        self.update_button = ttk.Button(selection_frame, text="Update Settings", command=lambda: self.update_config_options(serialNumber=self.selected_camera.get()))
         self.update_button.pack(side=tk.LEFT, padx=5)
         
         
@@ -496,12 +497,6 @@ class CameraMonitorApp:
             i+=1
         
         
-        
-        
-        
-        
-        
-    
     def setup_preview_options(self):
         """Setup the camera preview options"""
         # Title label
@@ -582,7 +577,9 @@ class CameraMonitorApp:
                             command=self.load_notes)
         load_btn.pack(side=tk.LEFT, padx=5)
 
-    def update_config_options(self):
+    def update_config_options(self, serialNumber = None):
+        tmpReplaceDict = self.exampleConfig.copy()
+        tmpCurrDict = self.exampleConfig #TODO will need to replace this later with the passed cameras config
         for key, value in self.config_labels_dict.items():
             if type(value) is dict:
                 for k2, v2 in value.items():
@@ -592,12 +589,22 @@ class CameraMonitorApp:
                         continue
                     else:
                         v2.config(text = tmp_val)
+                        try:
+                            tmpReplaceDict[key][k2] = float(tmp_val)
+                        except:
+                            tmpReplaceDict[key][k2] = tmp_val
             else:
                 tmp_val = self.config_entrys_dict[key].get()
                 if tmp_val == "":
                     continue
                 else:
                     value.config(text = tmp_val)
+                    try:
+                        tmpReplaceDict[key] = float(tmp_val)
+                    except:
+                        tmpReplaceDict[key] = tmp_val
+        #self.cameras2[serialNumber].cam_config = tmpReplaceDict
+        pprint(tmpReplaceDict)   
 
 
     def save_notes(self):
