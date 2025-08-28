@@ -1,0 +1,310 @@
+[2025-04-19 12:44:31] CameraApplication:INFO:Creating UI
+[2025-04-19 12:44:44] CameraApplication:INFO:Saving data
+[2025-04-19 12:46:53] CameraApplication:INFO:Creating UI
+[2025-04-19 12:46:55] CameraApplication:INFO:Saving data
+[2025-04-19 12:46:56] CameraApplication:ERROR:ERROR: No experiment data to save. Please run an experiment first.
+[2025-04-19 12:53:43] CameraApplication:INFO:Logging level set to INFO
+[2025-04-19 12:53:43] CameraApplication:INFO:Creating UI
+[2025-04-19 12:53:43] CameraApplication:INFO:Setting up camera status display
+[2025-04-19 12:53:46] CameraApplication:INFO:Saving data
+[2025-04-19 12:53:46] CameraApplication:ERROR:No experiment data to save. Please run an experiment first.
+[2025-04-19 12:55:24] CameraApplication:INFO:Logging level set to INFO
+[2025-04-19 12:55:24] CameraApplication:INFO:Creating UI
+[2025-04-19 12:55:24] CameraApplication:INFO:Setting up camera status display
+[2025-04-19 12:55:58] CameraApplication:INFO:Logging level set to DEBUG
+[2025-04-19 12:55:58] CameraApplication:INFO:Creating UI
+[2025-04-19 12:55:58] CameraApplication:INFO:Setting up camera status display
+[2025-04-19 12:56:02] CameraApplication:INFO:Saving data
+[2025-04-19 12:56:03] CameraApplication:ERROR:No experiment data to save. Please run an experiment first.
+[2025-04-21 19:45:57] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 19:45:57] CameraApplication:INFO:Creating UI
+[2025-04-21 19:45:57] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 19:51:54] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 19:51:54] CameraApplication:INFO:Creating UI
+[2025-04-21 19:51:54] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 19:52:19] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 19:52:19] CameraApplication:INFO:Creating UI
+[2025-04-21 19:52:19] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 19:53:25] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 19:53:25] CameraApplication:INFO:Creating UI
+[2025-04-21 19:53:25] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 19:59:33] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 19:59:33] CameraApplication:INFO:Creating UI
+[2025-04-21 19:59:33] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:01:36] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:01:36] CameraApplication:INFO:Creating UI
+[2025-04-21 20:01:36] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:01:36] CameraApplication:ERROR:Error creating settings controls: 'CameraMonitorApp' object has no attribute '_get_camera_by_serial'
+[2025-04-21 20:01:36] CameraApplication:INFO:Updated settings for camera 13703
+[2025-04-21 20:02:10] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:02:10] CameraApplication:INFO:Creating UI
+[2025-04-21 20:02:10] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:05:20] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:05:20] CameraApplication:INFO:Creating UI
+[2025-04-21 20:05:20] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:05:37] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:05:37] CameraApplication:INFO:Creating UI
+[2025-04-21 20:05:37] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:06:38] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:06:38] CameraApplication:INFO:Creating UI
+[2025-04-21 20:06:38] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:07:13] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:07:13] CameraApplication:INFO:Creating UI
+[2025-04-21 20:07:13] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:07:36] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:07:36] CameraApplication:INFO:Creating UI
+[2025-04-21 20:07:36] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:09:14] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:09:14] CameraApplication:INFO:Creating UI
+[2025-04-21 20:09:14] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:09:27] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:09:27] CameraApplication:INFO:Creating UI
+[2025-04-21 20:09:27] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:09:44] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:09:44] CameraApplication:INFO:Creating UI
+[2025-04-21 20:09:44] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:10:07] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:10:07] CameraApplication:INFO:Creating UI
+[2025-04-21 20:10:07] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:10:48] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:10:48] CameraApplication:INFO:Creating UI
+[2025-04-21 20:10:48] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:11:24] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:11:24] CameraApplication:INFO:Creating UI
+[2025-04-21 20:11:24] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:12:33] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:12:33] CameraApplication:INFO:Creating UI
+[2025-04-21 20:12:33] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:13:30] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:13:30] CameraApplication:INFO:Creating UI
+[2025-04-21 20:13:30] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:15:38] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:15:38] CameraApplication:INFO:Creating UI
+[2025-04-21 20:15:38] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 20:18:01] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 20:18:01] CameraApplication:INFO:Creating UI
+[2025-04-21 20:18:01] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 22:53:35] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 22:53:35] CameraApplication:INFO:Creating UI
+[2025-04-21 22:53:35] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 22:58:33] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 22:58:33] CameraApplication:INFO:Creating UI
+[2025-04-21 22:58:33] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 23:02:59] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 23:02:59] CameraApplication:INFO:Creating UI
+[2025-04-21 23:02:59] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 23:17:02] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 23:17:02] CameraApplication:INFO:Creating UI
+[2025-04-21 23:17:02] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 23:17:41] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 23:17:41] CameraApplication:INFO:Creating UI
+[2025-04-21 23:17:41] CameraApplication:INFO:Setting up camera status display
+[2025-04-21 23:22:44] CameraApplication:INFO:Logging level set to INFO
+[2025-04-21 23:22:44] CameraApplication:INFO:Creating UI
+[2025-04-21 23:22:44] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 19:47:15] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 19:47:15] CameraApplication:INFO:Creating UI
+[2025-04-22 19:47:15] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 19:48:28] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 19:48:28] CameraApplication:INFO:Creating UI
+[2025-04-22 19:48:28] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 19:52:14] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 19:52:14] CameraApplication:INFO:Creating UI
+[2025-04-22 19:52:14] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 19:53:32] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 19:53:32] CameraApplication:INFO:Creating UI
+[2025-04-22 19:53:32] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 19:53:39] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 19:53:39] CameraApplication:INFO:Creating UI
+[2025-04-22 19:53:39] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 19:54:30] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 19:54:54] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 19:54:54] CameraApplication:INFO:Creating UI
+[2025-04-22 19:54:54] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 19:55:16] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 19:55:16] CameraApplication:INFO:Creating UI
+[2025-04-22 19:55:16] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 19:57:15] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 19:57:32] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 19:57:32] CameraApplication:INFO:Creating UI
+[2025-04-22 19:57:32] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 19:57:50] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 19:57:50] CameraApplication:INFO:Creating UI
+[2025-04-22 19:57:50] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 19:59:35] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 19:59:35] CameraApplication:INFO:Creating UI
+[2025-04-22 19:59:35] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:00:02] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:00:02] CameraApplication:INFO:Creating UI
+[2025-04-22 20:00:02] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:02:57] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:02:57] CameraApplication:INFO:Creating UI
+[2025-04-22 20:02:57] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:03:28] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:03:28] CameraApplication:INFO:Creating UI
+[2025-04-22 20:03:28] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:03:41] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:03:41] CameraApplication:INFO:Creating UI
+[2025-04-22 20:03:41] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:03:57] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:03:57] CameraApplication:INFO:Creating UI
+[2025-04-22 20:03:57] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:04:20] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:04:20] CameraApplication:INFO:Creating UI
+[2025-04-22 20:04:20] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:04:54] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:04:54] CameraApplication:INFO:Creating UI
+[2025-04-22 20:04:54] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:07:04] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:07:04] CameraApplication:INFO:Creating UI
+[2025-04-22 20:07:04] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:08:48] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:08:48] CameraApplication:INFO:Creating UI
+[2025-04-22 20:08:48] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:09:14] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:09:14] CameraApplication:INFO:Creating UI
+[2025-04-22 20:09:14] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:09:27] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:09:27] CameraApplication:INFO:Creating UI
+[2025-04-22 20:09:27] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:09:33] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:09:33] CameraApplication:INFO:Creating UI
+[2025-04-22 20:09:33] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:12:44] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:12:44] CameraApplication:INFO:Creating UI
+[2025-04-22 20:12:44] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:13:20] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:13:20] CameraApplication:INFO:Creating UI
+[2025-04-22 20:13:20] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:13:59] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:13:59] CameraApplication:INFO:Creating UI
+[2025-04-22 20:13:59] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:14:17] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:14:17] CameraApplication:INFO:Creating UI
+[2025-04-22 20:14:17] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:14:47] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:14:47] CameraApplication:INFO:Creating UI
+[2025-04-22 20:14:47] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:14:55] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:14:55] CameraApplication:INFO:Creating UI
+[2025-04-22 20:14:55] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:15:12] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:15:12] CameraApplication:INFO:Creating UI
+[2025-04-22 20:15:12] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:15:19] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:15:19] CameraApplication:INFO:Creating UI
+[2025-04-22 20:15:19] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:15:43] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:15:43] CameraApplication:INFO:Creating UI
+[2025-04-22 20:15:43] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:16:41] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:16:41] CameraApplication:INFO:Creating UI
+[2025-04-22 20:16:41] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:16:51] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:16:51] CameraApplication:INFO:Creating UI
+[2025-04-22 20:16:51] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:17:13] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:17:13] CameraApplication:INFO:Creating UI
+[2025-04-22 20:17:13] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:17:25] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:17:25] CameraApplication:INFO:Creating UI
+[2025-04-22 20:17:25] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:17:34] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:17:34] CameraApplication:INFO:Creating UI
+[2025-04-22 20:17:34] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:17:42] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:17:42] CameraApplication:INFO:Creating UI
+[2025-04-22 20:17:42] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:17:50] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:17:50] CameraApplication:INFO:Creating UI
+[2025-04-22 20:17:50] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:17:59] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:17:59] CameraApplication:INFO:Creating UI
+[2025-04-22 20:17:59] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:18:36] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:18:36] CameraApplication:INFO:Creating UI
+[2025-04-22 20:18:36] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:19:11] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:19:11] CameraApplication:INFO:Creating UI
+[2025-04-22 20:19:11] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:19:27] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:19:27] CameraApplication:INFO:Creating UI
+[2025-04-22 20:19:27] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:19:34] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:19:34] CameraApplication:INFO:Creating UI
+[2025-04-22 20:19:34] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:20:09] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:20:09] CameraApplication:INFO:Creating UI
+[2025-04-22 20:20:09] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:21:54] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:21:54] CameraApplication:INFO:Creating UI
+[2025-04-22 20:21:54] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:22:18] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:22:18] CameraApplication:INFO:Creating UI
+[2025-04-22 20:22:18] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:22:37] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:22:37] CameraApplication:INFO:Creating UI
+[2025-04-22 20:22:37] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:22:51] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:22:51] CameraApplication:INFO:Creating UI
+[2025-04-22 20:22:51] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:23:34] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:23:34] CameraApplication:INFO:Creating UI
+[2025-04-22 20:23:34] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:26:51] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:26:51] CameraApplication:INFO:Creating UI
+[2025-04-22 20:26:51] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:29:36] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:29:36] CameraApplication:INFO:Creating UI
+[2025-04-22 20:29:36] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:35:31] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:35:31] CameraApplication:INFO:Creating UI
+[2025-04-22 20:35:31] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:36:40] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:36:40] CameraApplication:INFO:Creating UI
+[2025-04-22 20:36:40] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:36:58] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:36:58] CameraApplication:INFO:Creating UI
+[2025-04-22 20:36:58] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 20:38:05] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 20:38:05] CameraApplication:INFO:Creating UI
+[2025-04-22 20:38:05] CameraApplication:INFO:Setting up camera status display
+[2025-04-22 21:09:13] CameraApplication:INFO:Logging level set to INFO
+[2025-04-22 21:09:13] CameraApplication:INFO:Creating UI
+[2025-04-22 21:09:13] CameraApplication:INFO:Setting up camera status display
+[2025-04-25 17:51:39] CameraApplication:INFO:Logging level set to INFO
+[2025-04-25 17:51:39] CameraApplication:INFO:Creating UI
+[2025-04-25 17:51:39] CameraApplication:INFO:Setting up camera status display
+[2025-04-25 18:00:26] CameraApplication:INFO:Logging level set to INFO
+[2025-04-25 18:00:26] CameraApplication:INFO:Creating UI
+[2025-04-25 18:00:26] CameraApplication:INFO:Setting up camera status display
+[2025-04-25 18:00:43] CameraApplication:INFO:Logging level set to INFO
+[2025-04-25 18:00:43] CameraApplication:INFO:Creating UI
+[2025-04-25 18:00:43] CameraApplication:INFO:Setting up camera status display
+[2025-04-25 18:01:22] CameraApplication:INFO:Logging level set to INFO
+[2025-04-25 18:01:22] CameraApplication:INFO:Creating UI
+[2025-04-25 18:01:22] CameraApplication:INFO:Setting up camera status display
+[2025-04-25 18:02:16] CameraApplication:INFO:Logging level set to INFO
+[2025-04-25 18:02:16] CameraApplication:INFO:Creating UI
+[2025-04-25 18:02:16] CameraApplication:INFO:Setting up camera status display
+[2025-04-25 18:02:58] CameraApplication:INFO:Logging level set to INFO
+[2025-04-25 18:02:58] CameraApplication:INFO:Creating UI
+[2025-04-25 18:02:58] CameraApplication:INFO:Setting up camera status display
+[2025-04-25 18:03:30] CameraApplication:INFO:Logging level set to INFO
+[2025-04-25 18:03:30] CameraApplication:INFO:Creating UI
+[2025-04-25 18:03:30] CameraApplication:INFO:Setting up camera status display
+[2025-04-25 18:05:00] CameraApplication:INFO:Logging level set to INFO
+[2025-04-25 18:05:00] CameraApplication:INFO:Creating UI
+[2025-04-25 18:05:00] CameraApplication:INFO:Setting up camera status display
+[2025-04-25 18:08:26] CameraApplication:INFO:Logging level set to INFO
+[2025-04-25 18:08:26] CameraApplication:INFO:Creating UI
+[2025-04-25 18:08:26] CameraApplication:INFO:Setting up camera status display
+[2025-04-25 18:09:47] CameraApplication:INFO:Logging level set to INFO
+[2025-04-25 18:09:47] CameraApplication:INFO:Creating UI
+[2025-04-25 18:09:47] CameraApplication:INFO:Setting up camera status display
+[2025-04-25 18:12:10] CameraApplication:INFO:Logging level set to INFO
+[2025-04-25 18:12:10] CameraApplication:INFO:Creating UI
+[2025-04-25 18:12:10] CameraApplication:INFO:Setting up camera status display
+[2025-04-25 18:13:26] CameraApplication:INFO:Logging level set to INFO
+[2025-04-25 18:13:26] CameraApplication:INFO:Creating UI
+[2025-04-25 18:13:26] CameraApplication:INFO:Setting up camera status display

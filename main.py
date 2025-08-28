@@ -23,7 +23,7 @@ import logging as log
 import sys
 from pprint import pprint
 
-
+serial_numbers = ["13703", "12606", "12574"]
 save_data_path = ""
 
 class CameraDrivers:
@@ -166,27 +166,23 @@ class CameraMonitorApp:
 
         
         # Initialize camera drivers: TODO Change this to the actual camera driver library.
-        self.camera1 = AndoriXonCamera(camIndex=0, serialNumber=13703)
-        self.camera2 = AndoriXonCamera(camIndex=1, serialNumber=12606)
-        self.camera3 = AndoriXonCamera(camIndex=2, serialNumber=12574)
+        self.camera1 = AndoriXonCamera(camIndex=0, serialNumber=serial_numbers[0])
+        self.camera2 = AndoriXonCamera(camIndex=1, serialNumber=serial_numbers[1])
+        self.camera3 = AndoriXonCamera(camIndex=2, serialNumber=serial_numbers[2])
         # self.camera4 = AndoriXonCamera(camIndex=3, serialNumber=13579)
         self.cameras = [self.camera1, self.camera2, self.camera3]#, self.camera4]
         # self.cameras = [] #TODO remove this later.
         # Get camera serial numbers: TODO change this to search for all connected devices and find the cameras that way
         # self.camera_serials = [self.camera1.serialNumber, self.camera2.serialNumber, self.camera3.serialNumber, self.camera4.serialNumber]
-        self.camera_serials = ["13703", "12606", "12574"]#, "5432109"]
+        # self.camera_serials = ["13703", "12606", "12574"]#, "5432109"]
+        self.camera_serials = [cam.serialNumber for cam in self.cameras]
+        self.cameras2 = {}
+        self.__create_camera_dict__()    
         
-        self.cameras2 = {
-            "13703": self.camera1,
-            "12606": self.camera2,
-            "12574": self.camera3,
-            # "5432109": self.camera4
-        }
-        
-        # Create UI elements
+
       
         
-        
+        #Creating UI elements 
         self.monitoring = True
         self.monitor_thread = None
         
@@ -229,11 +225,16 @@ class CameraMonitorApp:
             'overflowBehavior': 'restart'
         }
         self.create_ui()
+ 
+    def __create_camera_dict__(self):
+        self.cameras2 = {
+            f"{cam.serialNumber}" : cam for cam in self.cameras
+        }
         
     def setup_camera_workers(self):
         """Initialize worker threads for each camera"""
         self.logger.info("Setting up camera workers")
-        for camera in self.cameras:
+        for camera in list(self.cameras2.values()):
             queue = Queue()
             worker = CameraWorker(camera, queue)
             self.camera_queues[camera.serialNumber] = queue
@@ -306,7 +307,7 @@ class CameraMonitorApp:
                 )
                 
                 curr_header = self.notes_text.get("1.0", tk.END)
-                curr_data = [cam.data for cam in self.cameras]
+                curr_data = [cam.data for cam in list(self.cameras2.values())]
                 
                 for data in curr_data:
                     save_fits_data(curr_header, data, save_data_path)
@@ -682,9 +683,10 @@ class CameraMonitorApp:
     def refresh_all(self):
         """Refresh all camera statuses"""
         self.queryingConnection = True
+        cameras = list(self.cameras2.values())
         for i, serial in enumerate(self.camera_serials):
             try:
-                self.update_camera_ui(serial, self.cameras[i].connection_status())
+                self.update_camera_ui(serial, cameras[i].connection_status())
             except Exception as e:
                 self.update_camera_ui(serial, False)
         self.queryingConnection = False
@@ -692,13 +694,13 @@ class CameraMonitorApp:
 
     def connect_all_cameras(self):
         """Connect to all cameras - placeholder function"""
-        
-        for i, serial in enumerate(self.camera_serials):
-                            
+        cameras = list(self.cameras2.values())
+        for i, serial in enumerate(self.camera_serials):              
             try:
                 tmp_cam = AndoriXonCamera(camIndex=i, serialNumber=serial)
                 if tmp_cam.connect():
                     self.cameras[i] = tmp_cam
+                    self.cameras2[serial] = tmp_cam
                     tmp_cam.camera_configuration()
                     self.setup_config_options()
                 else:
@@ -717,7 +719,7 @@ class CameraMonitorApp:
             try:
                 self.camera_labels[serial]['status_label'].config(text="Disconnected")
                 self.camera_labels[serial]['serial_label'].config(fg="red")             
-                self.cameras[i].disconnect()
+                self.cameras2[serial].disconnect()
             except Exception as e: 
                 messagebox.showerror("Error", f"Failed to disconnect camera {serial}: {str(e)}")
                 continue        
