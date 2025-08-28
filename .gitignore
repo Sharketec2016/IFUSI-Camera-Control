@@ -1,13 +1,3 @@
-/backend/Include
-/backend/Lib
-/backend/Scripts
-/backend/share
 /backend/logs
-/backend/__pycache__
-
-/backend_linux/Include
-/backend_linux/Lib
-/backend_linux/Scripts
-/backend_linux/share
-/backend_linux/logs
-/backend_linux/__pycache__
+tk
+threading
