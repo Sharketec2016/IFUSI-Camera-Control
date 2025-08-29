@@ -391,6 +391,69 @@ class CameraMonitorApp:
         
         disconnect_all_btn = ttk.Button(ops_frame, text="Disconnect All", command=self.disconnect_all_cameras)
         disconnect_all_btn.pack(side=tk.LEFT, padx=5)
+
+    def connect_all_cameras(self):
+        """Connect to all cameras and update their status."""
+        self.logger.info("Connecting to all cameras...")
+        for serial in self.camera_serials:
+            camera = self.cameras2[serial]
+            try:
+                if camera.connect():
+                    self.camera_labels[serial]["status_label"].config(text="Connected", fg="green")
+                    self.camera_labels[serial]["serial_label"].config(fg="green")
+                    self.logger.info(f"Camera {serial} connected successfully.")
+                else:
+                    self.camera_labels[serial]["status_label"].config(text="Connection Failed", fg="red")
+                    self.camera_labels[serial]["serial_label"].config(fg="red")
+                    self.logger.error(f"Failed to connect to camera {serial}.")
+            except Exception as e:
+                self.camera_labels[serial]["status_label"].config(text="Error", fg="red")
+                self.camera_labels[serial]["serial_label"].config(fg="red")
+                self.logger.error(f"Error connecting to camera {serial}: {e}")
+
+    def disconnect_all_cameras(self):
+        """Disconnect all cameras and update their status."""
+        self.logger.info("Disconnecting all cameras...")
+        for serial in self.camera_serials:
+            camera = self.cameras2[serial]
+            try:
+                if camera.disconnect():
+                    self.camera_labels[serial]["status_label"].config(text="Disconnected", fg="black")
+                    self.camera_labels[serial]["serial_label"].config(fg="red")
+                    self.logger.info(f"Camera {serial} disconnected.")
+                else:
+                    self.camera_labels[serial]["status_label"].config(text="Disconnected", fg="black")
+                    self.camera_labels[serial]["serial_label"].config(fg="red")
+
+            except Exception as e:
+                self.camera_labels[serial]["status_label"].config(text="Error", fg="red")
+                self.logger.error(f"Error disconnecting from camera {serial}: {e}")
+
+    def refresh_all(self):
+        """Refresh the status of all cameras."""
+        self.logger.info("Refreshing all camera statuses...")
+        for serial in self.camera_serials:
+            camera = self.cameras2[serial]
+            try:
+                if camera.connection_status():
+                    self.camera_labels[serial]["status_label"].config(text="Connected", fg="green")
+                    self.camera_labels[serial]["serial_label"].config(fg="green")
+                else:
+                    self.camera_labels[serial]["status_label"].config(text="Disconnected", fg="red")
+                    self.camera_labels[serial]["serial_label"].config(fg="red")
+            except Exception as e:
+                self.camera_labels[serial]["status_label"].config(text="Error", fg="red")
+                self.logger.error(f"Error refreshing status for camera {serial}: {e}")
+
+    def save_notes(self):
+        """Save the content of the notes text area to a file."""
+        self.logger.info("save_notes method called - not implemented")
+        showinfo("Not Implemented", "Save notes functionality is not yet implemented.")
+
+    def load_notes(self):
+        """Load content into the notes text area from a file."""
+        self.logger.info("load_notes method called - not implemented")
+        showinfo("Not Implemented", "Load notes functionality is not yet implemented.")
     
     def save_values(self):
         serialNumber = self.selected_camera.get()
@@ -442,13 +505,11 @@ class CameraMonitorApp:
         camera_select['values'] = self.camera_serials
         camera_select.current(0)
         camera_select.pack(side=tk.LEFT, padx=5)
-        camera_select.bind('<<ComboboxSelected>>', self.on_camera_selected)
+        camera_select.bind('<<ComboboxSelected>>', self._update_config_display)
         
         #Update Settings button
         self.update_button = ttk.Button(selection_frame, text="Update Settings", command=lambda: self.update_config_options(serialNumber=self.selected_camera.get()))
         self.update_button.pack(side=tk.LEFT, padx=5)
-        
-        
         
         self.config_canvas = tk.Canvas(self.config_frame)
         self.config_canvas.pack(side="left", fill="both", expand=True)
@@ -458,7 +519,6 @@ class CameraMonitorApp:
         self.config_canvas.configure(yscrollcommand=self.config_scrollbar.set)
         self.config_canvas.bind('<Configure>', lambda e: self.config_canvas.configure(scrollregion=self.config_canvas.bbox("all")))
         self.scrollable_frame = ttk.Frame(self.config_canvas)
-        
         
         self.config_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
         
@@ -483,23 +543,6 @@ class CameraMonitorApp:
 
                     curr_label = ttk.Label(self.config_left_frame, text=f"{v2}", font=self.custom_font)
                     curr_label.grid(row=i, column=7, sticky="w", padx=(135, 1), pady=2)
-
-                    # # Choose widget type based on value type / key hints
-                    # if isinstance(v2, bool):
-                    #     var = tk.BooleanVar(value=v2)
-                    #     widget = ttk.Checkbutton(self.config_left_frame, variable=var)
-                    #     widget.grid(row=i, column=3, padx=20, pady=2, sticky="w")
-                    # elif isinstance(v2, (int, float)):
-                    #     # use Combobox with some sensible presets, fallback to Entry
-                    #     presets = [str(v2), str(int(v2)), str(int(v2*10)), str(int(v2*100))]
-                    #     var = tk.StringVar(value=str(v2))
-                    #     widget = ttk.Combobox(self.config_left_frame, textvariable=var, values=presets, width=18)
-                    #     widget.grid(row=i, column=3, padx=20, pady=2, sticky="w")
-                    # else:
-                    #     # treat as choice or string
-                    #     var = tk.StringVar(value=str(v2))
-                    #     widget = ttk.Entry(self.config_left_frame, textvariable=var, width=20)
-                    #     widget.grid(row=i, column=3, padx=20, pady=2)
 
                     var = tk.StringVar(value=str(v2))
                     dropdown_values = self.cam_config_options_json[key][k2]
@@ -540,6 +583,31 @@ class CameraMonitorApp:
                     self.config_entrys_dict.update({key: widget})
                     self.config_vars.update({key: var})
             i+=1
+        self._update_config_display()
+
+    def _update_config_display(self, event=None):
+        serialNumber = self.selected_camera.get()
+        if not serialNumber or serialNumber not in self.cameras2:
+            return # No camera selected or camera not found
+
+        camera = self.cameras2[serialNumber]
+        if not hasattr(camera, 'cam_config') or not camera.cam_config:
+            camera.camera_configuration() # Create a default config if it doesn't exist
+
+        config = camera.cam_config
+
+        for key, value in config.items():
+            if isinstance(value, dict):
+                for k2, v2 in value.items():
+                    if key in self.config_vars and k2 in self.config_vars[key]:
+                        self.config_vars[key][k2].set(v2)
+                    if key in self.config_labels_dict and k2 in self.config_labels_dict[key]:
+                        self.config_labels_dict[key][k2].config(text=str(v2))
+            else:
+                if key in self.config_vars:
+                    self.config_vars[key].set(value)
+                if key in self.config_labels_dict:
+                    self.config_labels_dict[key].config(text=str(value))
             
     def setup_preview_options(self):
         """Setup the camera preview options"""
@@ -622,8 +690,15 @@ class CameraMonitorApp:
         load_btn.pack(side=tk.LEFT, padx=5)
 
     def update_config_options(self, serialNumber = None):
-        tmpReplaceDict = self.exampleConfig.copy()
-        tmpCurrDict = self.exampleConfig #TODO will need to replace this later with the passed cameras config
+        if not serialNumber:
+            serialNumber = self.selected_camera.get()
+            
+        camera = self.cameras2[serialNumber]
+        if not hasattr(camera, 'cam_config'):
+            camera.camera_configuration()
+
+        tmpReplaceDict = camera.cam_config.copy()
+
         for key, value in self.config_labels_dict.items():
             if type(value) is dict:
                 for k2, v2 in value.items():
@@ -679,141 +754,8 @@ class CameraMonitorApp:
                     tmpReplaceDict[key] = float(tmp_val)
                 except Exception:
                     tmpReplaceDict[key] = tmp_val
-        #self.cameras2[serialNumber].cam_config = tmpReplaceDict
-        pprint(tmpReplaceDict)   
-
-    def save_notes(self):
-        """Save the notes to a file using file dialog"""
-        file_path = filedialog.asksaveasfilename(
-            title="Save Notes As",
-            defaultextension=".txt",
-            filetypes=[
-                ("Text files", "*.txt"),
-                ("All files", "*.*")
-            ],
-            initialdir="."  # Starts in current directory
-        )
-        
-        if file_path:  # Only proceed if a file path was selected (not cancelled)
-            notes_content = self.notes_text.get("1.0", tk.END)
-            try:
-                with open(file_path, "w") as f:
-                    f.write(notes_content)
-                messagebox.showinfo("Success", "Notes saved successfully!")
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to save notes: {str(e)}")
-
-    def load_notes(self):
-        """Load notes from a file using file dialog"""
-        file_path =  filedialog.askopenfilename(
-            title="Select Notes File",
-            filetypes=[
-                ("Text files", "*.txt"),
-                ("All files", "*.*")
-            ],
-            initialdir="."  # Starts in current directory
-        )
-        
-        if file_path:  # Only proceed if a file was selected (not cancelled)
-            try:
-                with open(file_path, "r") as f:
-                    content = f.read()
-                    self.notes_text.delete("1.0", tk.END)
-                    self.notes_text.insert("1.0", content)
-                messagebox.showinfo("Success", "Notes loaded successfully!")
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to load notes: {str(e)}")
-
-    def update_acquisition_status(self):
-        """Update the status of each camera periodically"""
-        if(self.running_experiment):
-            self.monitoring = False
-            return
-        
-        while self.monitoring:
-            for serial in self.camera_serials:
-                status = self.camera_drivers.get_camera_status(serial)
-                
-                # Use after() to update UI from the main thread
-                self.root.after(0, self.refresh_all())
-
-            # Sleep for a while before next update
-            time.sleep(2)
-
-    def update_camera_ui(self, serial, status):
-        """Update the UI elements for a camera based on its status"""
-        if serial in self.camera_labels:
-            labels = self.camera_labels[serial]
-
-            # Update serial number color based on status
-            if status:
-                labels["serial_label"].config(fg="green")
-                labels["status_label"].config(text="Connected")
-            else:
-                labels["serial_label"].config(fg="red")
-                val = labels["status_label"]
-                val.config(text="Disconnected")
-
-    def refresh_all(self):
-        """Refresh all camera statuses"""
-        self.queryingConnection = True
-        cameras = list(self.cameras2.values())
-        for i, serial in enumerate(self.camera_serials):
-            try:
-                self.update_camera_ui(serial, cameras[i].connection_status())
-            except Exception as e:
-                self.update_camera_ui(serial, False)
-        self.queryingConnection = False
-        self.status_frame.update()
-
-    def connect_all_cameras(self):
-        """Connect to all cameras - placeholder function"""
-        cameras = list(self.cameras2.values())
-        for i, serial in enumerate(self.camera_serials):              
-            try:
-                tmp_cam = AndoriXonCamera(camIndex=i, serialNumber=serial)
-                if tmp_cam.connect():
-                    self.cameras[i] = tmp_cam
-                    self.cameras2[serial] = tmp_cam
-                    tmp_cam.camera_configuration()
-                    self.setup_config_options()
-                else:
-                    messagebox.showerror("Error", f"Failed to connect to camera {serial}")
-                    continue
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to connect to camera {serial}: {str(e)}")
-                continue    
-        
-        self.refresh_all()
-                
-    def disconnect_all_cameras(self):
-        """Disconnect all cameras - placeholder function"""
-        
-        for i, serial in enumerate(self.camera_serials):
-            try:
-                self.camera_labels[serial]['status_label'].config(text="Disconnected")
-                self.camera_labels[serial]['serial_label'].config(fg="red")             
-                self.cameras2[serial].disconnect()
-            except Exception as e: 
-                messagebox.showerror("Error", f"Failed to disconnect camera {serial}: {str(e)}")
-                continue        
-
-        self.refresh_all()
-        
-    def on_camera_selected(self, event):
-        """Handle camera selection change"""
-        # Load the settings for the selected camera - implement this with your actual logic
-
-        self.update_config_options()
-          
-    def apply_settings(self):
-        """Apply settings to the selected camera"""
-        serial = self.selected_camera.get()
-        settings = {
-        "exposure": self.exposure_text.get()
-        }
-        print(settings['exposure'])
-        self.update_config_options()
+        self.cameras2[serialNumber].cam_config = tmpReplaceDict
+        pprint(tmpReplaceDict)
 
     def toggle_preview(self, start):
         """Toggle camera preview on/off"""

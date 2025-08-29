@@ -69,6 +69,19 @@ class AndoriXonCamera():
             configDict = cameraDict['CameraConfiguration']
             
         else:
+            amp_mode_defaults = {
+                'channel': 0, 'oamp': 1, 'hsspeed': 100, 'preamp': 200
+            }
+            if self.cameraObj and self.cameraObj.is_opened():
+                amp_modes = self.cameraObj.get_all_amp_modes()
+                if amp_modes:
+                    amp_mode_defaults = {
+                        'channel': amp_modes[0].channel,
+                        'oamp': amp_modes[0].oamp,
+                        'hsspeed': amp_modes[0].hsspeed,
+                        'preamp': amp_modes[0].preamp
+                    }
+
             configDict = {
             'acquisitionMode': "kinetic",
             'triggeringMode': 'int',
@@ -82,11 +95,7 @@ class AndoriXonCamera():
             'emGain': {'state': False, 'gainLevel': 0},
             'shutterSettings': {'mode': 'open'},
             'fanLevel': 'full',
-            'ampMode': {'channel': self.cameraObj.get_all_amp_modes()[0].channel,
-                        'oamp': self.cameraObj.get_all_amp_modes()[0].oamp,
-                        'hsspeed': self.cameraObj.get_all_amp_modes()[0].hsspeed,
-                        'preamp': self.cameraObj.get_all_amp_modes()[0].preamp
-                        },
+            'ampMode': amp_mode_defaults,
             'temperatureSetpoint': 20
         }
         configDict['acqconfiguration'] = {
@@ -133,7 +142,7 @@ class AndoriXonCamera():
         self.cameraObj.setup_acquisition(acqDict['acqMode'], acqDict['nframes'])
         self.cameraObj.set_overflow_behavior(behavior=acqDict['overflowBehavior'])
     
-    def getCamera_default_config(self):
+    def get_cam_config(self):
         return self.cam_config
 
     def connect(self):
