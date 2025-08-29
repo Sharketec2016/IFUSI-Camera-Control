@@ -22,9 +22,13 @@ from backend.cameraDataHandle import *
 import logging as log
 import sys
 from pprint import pprint
+import json
 
 serial_numbers = ["13703", "12606", "12574"]
 save_data_path = ""
+path_to_config_options_json = "/home/matt/Documents/Southern_Graduate/Astro /Python Coding/Python_Scripts/backend/configuration_options.json"
+cam_config_options_json = None
+
 
 class CameraDrivers:
     def get_camera_status(self, serial_number):
@@ -156,14 +160,14 @@ class CameraWorker:
 
 # Main application class
 class CameraMonitorApp:
-    def __init__(self, root, debugLogging = False):
+    def __init__(self, root, debugLogging = False, cam_config_options_json = None):
         self.root = root
         self.root.title("Camera Monitoring System")
         self.root.geometry("1200x800")
         self.root.minsize(800, 600)
         self.logger = self._setup_logging(debugLogging)
         self.custom_font = Font(family="Helvetica", size=14, weight="bold")
-
+        self.cam_config_options_json = cam_config_options_json
         
         # Initialize camera drivers: TODO Change this to the actual camera driver library.
         self.camera1 = AndoriXonCamera(camIndex=0, serialNumber=serial_numbers[0])
@@ -182,29 +186,30 @@ class CameraMonitorApp:
 
       
         
-        #Creating UI elements 
+        # Creating UI elements
         self.monitoring = True
         self.monitor_thread = None
-        
+
         self.camera_queues: Dict[str, Queue] = {}
         self.camera_workers: Dict[str, CameraWorker] = {}
         self.running_experiment = False
         self.running_acquisition = False
-        
+
         self.has_run_experiment = False
 
         self.queryingConnection = False
-        
+
         self.config_labels_dict = dict()
         self.config_entrys_dict = dict()
+        self.config_vars = dict()   # store tk.Variable for each config entry
         self.config_serial_number = None
-        
+
         self.exampleConfig = {
             'acquisitionMode': "kinetic",
             'triggeringMode': 'int',
             'readoutMode': 'image',
             'exposureTime': 0.04,
-            'acquistionNumber': 1,
+            'acquisitionNumber': 1,
             'frameTransfer': True,
             'verticalShift': {'shiftSpeed': 0.6, 'clockVoltageAmplitude': None},
             'horizontalShift': {'readoutRate': '30 MHz', 'preAmpGain': 'Gain 1', 'outputAmp': 'Electron Multiplying'},
@@ -261,9 +266,6 @@ class CameraMonitorApp:
         
         self.notes_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.notes_frame, text="FITS Header")
-        
-
-        
         
         # # Create camera preview tab: TODO may add this back later as a sanity check when using the cameras right before a run.
         self.preview_frame = ttk.Frame(self.notebook)
@@ -390,8 +392,6 @@ class CameraMonitorApp:
         disconnect_all_btn = ttk.Button(ops_frame, text="Disconnect All", command=self.disconnect_all_cameras)
         disconnect_all_btn.pack(side=tk.LEFT, padx=5)
     
-    
-    
     def save_values(self):
         serialNumber = self.selected_camera.get()
         # self.config_serial_number = serialNumber
@@ -399,13 +399,30 @@ class CameraMonitorApp:
         for key, value in configDict.items():
             if type(value) == dict:
                 for k2, v2 in value.items():
-                    value = self.config_entrys_dict[key][k2].get()
-                    self.config_labels_dict[key][k2].config(text=value)
-                    self.cameras2[serialNumber].cam_config[key][k2] = value
+                    # prefer variable-backed values if available
+                    try:
+                        var = self.config_vars.get(key, {}).get(k2, None)
+                        if var is not None:
+                            new_val = var.get()
+                        else:
+                            new_val = self.config_entrys_dict[key][k2].get()
+                    except Exception:
+                        new_val = self.config_entrys_dict[key][k2].get()
+
+                    self.config_labels_dict[key][k2].config(text=new_val)
+                    self.cameras2[serialNumber].cam_config[key][k2] = new_val
             else:
-                value = self.config_entrys_dict[key].get()
-                self.config_labels_dict[key].config(text=value)
-                self.cameras2[serialNumber].cam_config[key] = value
+                try:
+                    var = self.config_vars.get(key, None)
+                    if var is not None and not isinstance(var, dict):
+                        new_val = var.get()
+                    else:
+                        new_val = self.config_entrys_dict[key].get()
+                except Exception:
+                    new_val = self.config_entrys_dict[key].get()
+
+                self.config_labels_dict[key].config(text=new_val)
+                self.cameras2[serialNumber].cam_config[key] = new_val
         
     def setup_config_options(self):
         """Setup the camera configuration options"""
@@ -427,6 +444,7 @@ class CameraMonitorApp:
         camera_select.pack(side=tk.LEFT, padx=5)
         camera_select.bind('<<ComboboxSelected>>', self.on_camera_selected)
         
+        #Update Settings button
         self.update_button = ttk.Button(selection_frame, text="Update Settings", command=lambda: self.update_config_options(serialNumber=self.selected_camera.get()))
         self.update_button.pack(side=tk.LEFT, padx=5)
         
@@ -448,11 +466,10 @@ class CameraMonitorApp:
         self.config_right_frame = ttk.Frame(self.scrollable_frame, padding=10) #this will show the current values for the camera configs.
         self.config_left_frame.pack(side="left", fill="both", expand=True)
         self.config_right_frame.pack(side="right", fill="both", expand=True)
-             
+
         self.current_settings = ttk.Label(self.config_left_frame, text="Current Settings", font=self.custom_font)
         self.current_settings.grid(row=0, column=7, padx=(135, 1), pady=5)
-             
-        
+
         i = 1
         for key, value in self.exampleConfig.items():
             if type(value) is dict:
@@ -460,44 +477,70 @@ class CameraMonitorApp:
                 tmp_label.grid(row=i, column=0, sticky="w", padx=2, pady=2)
                 i+=1
                 for k2, v2 in value.items():
-                    
-                    
+
                     tmp2_label = ttk.Label(self.config_left_frame, text=f"{k2}", font=self.custom_font)
                     tmp2_label.grid(row=i, column=2, sticky="w", padx=0, pady=2)
-                    
+
                     curr_label = ttk.Label(self.config_left_frame, text=f"{v2}", font=self.custom_font)
                     curr_label.grid(row=i, column=7, sticky="w", padx=(135, 1), pady=2)
-                    
-                    tmp_entry = ttk.Entry(self.config_left_frame, width=20)
-                    tmp_entry.grid(row=i, column=3, padx=20, pady=2)
-                    
+
+                    # # Choose widget type based on value type / key hints
+                    # if isinstance(v2, bool):
+                    #     var = tk.BooleanVar(value=v2)
+                    #     widget = ttk.Checkbutton(self.config_left_frame, variable=var)
+                    #     widget.grid(row=i, column=3, padx=20, pady=2, sticky="w")
+                    # elif isinstance(v2, (int, float)):
+                    #     # use Combobox with some sensible presets, fallback to Entry
+                    #     presets = [str(v2), str(int(v2)), str(int(v2*10)), str(int(v2*100))]
+                    #     var = tk.StringVar(value=str(v2))
+                    #     widget = ttk.Combobox(self.config_left_frame, textvariable=var, values=presets, width=18)
+                    #     widget.grid(row=i, column=3, padx=20, pady=2, sticky="w")
+                    # else:
+                    #     # treat as choice or string
+                    #     var = tk.StringVar(value=str(v2))
+                    #     widget = ttk.Entry(self.config_left_frame, textvariable=var, width=20)
+                    #     widget.grid(row=i, column=3, padx=20, pady=2)
+
+                    var = tk.StringVar(value=str(v2))
+                    dropdown_values = self.cam_config_options_json[key][k2]
+                        
+                    widget = ttk.Combobox(self.config_left_frame, textvariable=var, values=dropdown_values, width=18)
+                    widget.grid(row=i, column=3, padx=35, pady=2, sticky="w")
+
                     try:
+                        # store label, widget and var
                         self.config_labels_dict[key].update({k2: curr_label})
-                        self.config_entrys_dict[key].update({k2: tmp_entry})
-                    except:
+                        self.config_entrys_dict[key].update({k2: widget})
+                        self.config_vars.setdefault(key, {})[k2] = var
+                    except Exception:
                         self.config_labels_dict.update({key: {k2: curr_label}})
-                        self.config_entrys_dict.update({key: {k2: tmp_entry}})
-                    
+                        self.config_entrys_dict.update({key: {k2: widget}})
+                        self.config_vars.update({key: {k2: var}})
+
                     i+=1
             else:
                 tmp_label = ttk.Label(self.config_left_frame, text=f"{key}", font=self.custom_font)
                 tmp_label.grid(row=i, column=0, sticky="w", padx=5, pady=2)
-                
+
                 curr_label = ttk.Label(self.config_left_frame, text=f"{value}", font=self.custom_font)
                 curr_label.grid(row=i, column=7, sticky="w", padx=(135, 1), pady=2)
-                
-                tmp_entry = ttk.Entry(self.config_left_frame, width=20)
-                tmp_entry.grid(row=i, column=3, padx=35, pady=2)
-                
+
+                var = tk.StringVar(value=str(value))
+                dropdown_values = self.cam_config_options_json[key]
+                    
+                widget = ttk.Combobox(self.config_left_frame, textvariable=var, values=dropdown_values, width=18)
+                widget.grid(row=i, column=3, padx=35, pady=2, sticky="w")
+
                 try:
                     self.config_labels_dict[key] = curr_label
-                    self.config_entrys_dict[key] = tmp_entry
-                except:
+                    self.config_entrys_dict[key] = widget
+                    self.config_vars[key] = var
+                except Exception:
                     self.config_labels_dict.update({key: curr_label})
-                    self.config_entrys_dict.update({key: tmp_entry})
+                    self.config_entrys_dict.update({key: widget})
+                    self.config_vars.update({key: var})
             i+=1
-        
-        
+            
     def setup_preview_options(self):
         """Setup the camera preview options"""
         # Title label
@@ -584,29 +627,60 @@ class CameraMonitorApp:
         for key, value in self.config_labels_dict.items():
             if type(value) is dict:
                 for k2, v2 in value.items():
-                    
-                    tmp_val= self.config_entrys_dict[key][k2].get()
-                    if tmp_val == "":
-                        continue
-                    else:
-                        v2.config(text = tmp_val)
+                    # Prefer variable-backed value if available
+                    tmp_val = None
+                    var = None
+                    if key in self.config_vars and isinstance(self.config_vars[key], dict):
+                        var = self.config_vars[key].get(k2)
+                    if var is not None:
                         try:
-                            tmpReplaceDict[key][k2] = float(tmp_val)
-                        except:
-                            tmpReplaceDict[key][k2] = tmp_val
-            else:
-                tmp_val = self.config_entrys_dict[key].get()
-                if tmp_val == "":
-                    continue
-                else:
-                    value.config(text = tmp_val)
+                            tmp_val = var.get()
+                        except Exception:
+                            tmp_val = None
+                    else:
+                        # fallback to widget.get() if possible
+                        try:
+                            tmp_val = self.config_entrys_dict[key][k2].get()
+                        except Exception:
+                            tmp_val = None
+
+                    if tmp_val is None:
+                        continue
+                    if not (type(tmpReplaceDict[key][k2]) == type(tmp_val)):
+                        # attempt to coerce numeric strings
+                        pass
+                    if tmp_val == '':
+                        continue
+                    v2.config(text = tmp_val)
                     try:
-                        tmpReplaceDict[key] = float(tmp_val)
-                    except:
-                        tmpReplaceDict[key] = tmp_val
+                        tmpReplaceDict[key][k2] = float(tmp_val)
+                    except Exception:
+                        tmpReplaceDict[key][k2] = tmp_val
+            else:
+                tmp_val = None
+                var = self.config_vars.get(key)
+                if var is not None and not isinstance(var, dict):
+                    try:
+                        tmp_val = var.get()
+                    except Exception:
+                        tmp_val = None
+                else:
+                    try:
+                        tmp_val = self.config_entrys_dict[key].get()
+                    except Exception:
+                        tmp_val = None
+
+                if tmp_val is None:
+                    continue
+                if tmp_val == '':
+                    continue
+                value.config(text = tmp_val)
+                try:
+                    tmpReplaceDict[key] = float(tmp_val)
+                except Exception:
+                    tmpReplaceDict[key] = tmp_val
         #self.cameras2[serialNumber].cam_config = tmpReplaceDict
         pprint(tmpReplaceDict)   
-
 
     def save_notes(self):
         """Save the notes to a file using file dialog"""
@@ -731,8 +805,7 @@ class CameraMonitorApp:
         # Load the settings for the selected camera - implement this with your actual logic
 
         self.update_config_options()
-        
-            
+          
     def apply_settings(self):
         """Apply settings to the selected camera"""
         serial = self.selected_camera.get()
@@ -902,8 +975,12 @@ def main():
     
     debug_mode = "-d" in args 
     
+    with open(path_to_config_options_json, "r") as f:
+        cam_config_options_json = json.load(f)
+    
+    
     root = tk.Tk()
-    app = CameraMonitorApp(root, debugLogging=debug_mode)
+    app = CameraMonitorApp(root, debugLogging=debug_mode, cam_config_options_json=cam_config_options_json)
     root.mainloop()
 
 

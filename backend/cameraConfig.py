@@ -74,7 +74,7 @@ class AndoriXonCamera():
             'triggeringMode': 'int',
             'readoutMode': 'image',
             'exposureTime': 0.04,
-            'acquistionNumber': 1,
+            'acquisitionNumber': 1,
             'frameTransfer': True,
             'verticalShift': {'shiftSpeed': 0.6, 'clockVoltageAmplitude': None},
             'horizontalShift': {'readoutRate': '30 MHz', 'preAmpGain': 'Gain 1', 'outputAmp': 'Electron Multiplying'},
@@ -104,7 +104,7 @@ class AndoriXonCamera():
                 self.cameraObj.set_EMCCD_gain(gain=configDict['emGain']['gainLevel'], advanced=configDict['emGain']['state'])
                 self.cameraObj.setup_shutter(mode=configDict['shutterSettings']['mode'])
                 self.cameraObj.set_fan_mode(mode=configDict['fanLevel'])
-                self.cameraObj.setup_kinetic_mode(num_cycle=configDict['acquistionNumber'])
+                self.cameraObj.setup_kinetic_mode(num_cycle=configDict['acquisitionNumber'])
                 self.cameraObj.enable_frame_transfer_mode(enable=configDict['frameTransfer'])
                 self.cameraObj.setup_image_mode() #letting default values be passed
                 self.cameraObj.set_amp_mode(channel = configDict['ampMode']['channel'],

@@ -1,0 +1,40 @@
+
+{
+
+    "acquisitionMode" : ["single", "accum", "kinetic", "fastkinetic", "cont"],
+    "triggeringMode" : ["int", "ext", "software", "ext_start", "ext_exp"],
+    "readoutMode" : ["image", "fvb", "single_track", "multi_track", "random_track"],  
+    "exposureTime" : [2],  //Need to update with proper values
+    "acquisitionNumber" : [3], //Need to update with proper values
+    "frameTransfer" : [0, 1], 
+    "verticalShift" : {
+        "shiftSpeed" : [1, 10, 200], //Need to update with proper values
+        "clockVoltageAmplitude" : [20, 50, 100] //Need to update with proper values
+    },
+    "horizontalShift" : {
+        "readoutRate" : ["30 Mhz", "10 MHz", "5 MHz"],
+        "preAmpGain" : [3, 4, 5],
+        "outputAmp" : [5, 6, 7]
+    },
+    "baselineClamp" : [],
+    "emGain" : {
+        "state" : [],
+        "gainLevel" : []
+    },
+    "shutterSettings" : {
+        "mode" : []
+    },
+    "fanLevel" : [],
+    "ampMode" : {
+        "channel" : [],
+        "oamp" : [],
+        "hsspeed" : [],
+        "preamp" : []
+    },
+    "temperatureSetpoint" : [],
+    "acqconfiguration" : {
+        "acqMode" : [],
+        "nframes" : [],
+        "overflowBehavior" : []
+    }
+}
