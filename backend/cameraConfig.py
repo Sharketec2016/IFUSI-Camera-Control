@@ -175,6 +175,21 @@ class AndoriXonCamera():
             self.is_connected = CameraState.ERROR
             return False
     
+    def start_acquisition(self):
+        if self.cameraObj and self.cameraObj.is_opened():
+            self.cameraObj.start_acquisition()
+            self.is_in_acquisition = CameraState.ACQUIRING
+
+    def stop_acquisition(self):
+        if self.cameraObj and self.cameraObj.is_opened():
+            self.cameraObj.stop_acquisition()
+            self.is_in_acquisition = CameraState.NOT_ACQUIRING
+
+    def read_newest_image(self):
+        if self.cameraObj and self.cameraObj.is_opened():
+            return self.cameraObj.read_newest_image()
+        return None
+    
     def setup_logging(self):
         logger = log.getLogger(f"Camera-{self.serialNumber}")
         logger.setLevel(log.DEBUG)

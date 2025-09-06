@@ -23,49 +23,15 @@ import logging as log
 import sys
 from pprint import pprint
 import json
+from PIL import Image, ImageTk
+import cv2
 
 serial_numbers = ["13703", "12606", "12574"]
 save_data_path = ""
-path_to_config_options_json = "/home/matt/Documents/Southern_Graduate/Astro /Python Coding/Python_Scripts/backend/configuration_options.json"
+path_to_config_options_json = "./backend/configuration_options.json"
 cam_config_options_json = None
 
 
-class CameraDrivers:
-    def get_camera_status(self, serial_number):
-        """
-        Placeholder function to get camera status.
-        Returns True if camera is working, False otherwise.
-        Replace with your actual implementation.
-        """
-        # Simulating random status - replace with your actual implementation
-        import random
-        return random.choice([True, False])
-    
-    def get_camera_serial_numbers(self):
-        """
-        Placeholder function to get all camera serial numbers.
-        Replace with your actual implementation.
-        """
-        # Simulating 4 camera serial numbers - replace with your actual implementation
-        return ["1234567", "7654321", "9876543", "5432109"]
-    
-    def capture_image(self, serial_number):
-        """
-        Placeholder function to capture image from a specific camera.
-        Replace with your actual implementation.
-        """
-        print(f"Capturing image from camera {serial_number}")
-        # Simulating success - replace with your actual implementation
-        return True
-    
-    def configure_camera(self, serial_number, settings):
-        """
-        Placeholder function to configure a specific camera.
-        Replace with your actual implementation.
-        """
-        print(f"Configuring camera {serial_number} with settings: {settings}")
-        # Simulating success - replace with your actual implementation
-        return True
 
 class CameraWorker:
     def __init__(self, camera, command_queue: Queue):
@@ -168,6 +134,7 @@ class CameraMonitorApp:
         self.logger = self._setup_logging(debugLogging)
         self.custom_font = Font(family="Helvetica", size=14, weight="bold")
         self.cam_config_options_json = cam_config_options_json
+        self.preview_active = False
         
         # Initialize camera drivers: TODO Change this to the actual camera driver library.
         self.camera1 = AndoriXonCamera(camIndex=0, serialNumber=serial_numbers[0])
@@ -760,22 +727,71 @@ class CameraMonitorApp:
     def toggle_preview(self, start):
         """Toggle camera preview on/off"""
         serial = self.preview_camera.get()
+        camera = self.cameras2.get(serial)
+
+        if not camera or not camera.is_connected:
+            messagebox.showerror("Error", f"Camera {serial} is not connected.")
+            return
 
         if start:
+            if self.preview_active:
+                self.toggle_preview(False) # Stop previous preview if any
+
+            self.preview_active = True
             self.preview_placeholder.config(text=f"Starting preview for camera {serial}...")
-            # Here you would implement the actual preview functionality
+            camera.start_acquisition()
+            self.preview_thread = threading.Thread(target=self._update_preview_frame, args=(camera,), daemon=True)
+            self.preview_thread.start()
         else:
-            self.preview_placeholder.config(text="Preview stopped")
-            # Here you would stop the preview
+            self.preview_active = False
+            if hasattr(self, 'preview_thread') and self.preview_thread.is_alive():
+                self.preview_thread.join(timeout=1.0)
+            camera.stop_acquisition()
+            self.preview_placeholder.config(text="No Preview Available")
+
+    def _update_preview_frame(self, camera):
+        """Update the preview frame in a loop"""
+        while self.preview_active:
+            frame = camera.read_newest_image()
+            if frame is not None:
+                # Normalize and convert to 8-bit for display
+                frame = cv2.normalize(frame, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+                img = Image.fromarray(frame)
+                imgtk = ImageTk.PhotoImage(image=img)
+                self.preview_placeholder.imgtk = imgtk
+                self.preview_placeholder.config(image=imgtk)
+            time.sleep(0.03) # ~30 fps
 
     def capture_image(self):
         """Capture an image from the selected camera"""
         serial = self.preview_camera.get()
+        camera = self.cameras2.get(serial)
 
-        success = self.camera_drivers.capture_image(serial)
+        if not camera or camera.is_connected == CameraState.DISCONNECTED:
+            messagebox.showerror("Error", f"Camera {serial} is not connected.")
+            return
 
-        if success:
-            messagebox.showinfo("Capture", f"Image captured from camera {serial}")
+        was_acquiring = camera.acquisition_status() == CameraState.ACQUIRING
+        if not was_acquiring:
+            camera.start_acquisition()
+            time.sleep(0.1)  # Wait for a frame
+
+        frame = camera.read_newest_image()
+
+        if not was_acquiring:
+            camera.stop_acquisition()
+
+        if frame is not None:
+            save_path = filedialog.asksaveasfilename(defaultextension=".fits",
+                                                       filetypes=[("FITS files", "*.fits"),
+                                                                  ("All files", "*.*")],
+                                                       title="Save Snapshot")
+            if save_path:
+                try:
+                    save_fits_data(frame, savepath=os.path.dirname(save_path), header_text=self.notes_text.get("1.0", tk.END))
+                    messagebox.showinfo("Capture", f"Image captured and saved to {save_path}")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save image: {e}")
         else:
             messagebox.showerror("Error", f"Failed to capture image from camera {serial}")
 

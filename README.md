@@ -24,7 +24,9 @@ To properly use the camera application, a suitable environment needs to be creat
     1. numpy - This will be used for array handling of data
     2. astropy - Package for data formatting, header creation, and data saving.
     3. pandas - Package for dataframe creation, data handling, and data saving.
-    4. Use the command `conda install -c conda-forge pylablib`  - Contains all camera drivers for the iXon Andor cameras.
+    4. Pillow - Python imaging library for opening, manipulating, and saving many different image file formats.
+    5. opencv-python - Python library for computer vision tasks.
+    6. Use the command `conda install -c conda-forge pylablib`  - Contains all camera drivers for the iXon Andor cameras.
     Note: All other packages used within the project should be included by default, or should aldready be installed along side the above packages automatically. If any missing dependency errors occur, install the missing packages/dependances accordingly. 
 4. Within the package populated env, run the command `python main.py` to launch the application. 
 
