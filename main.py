@@ -81,38 +81,33 @@ class CameraWorker:
         try:
             self.acquisition_count = 0
             print(f"Starting acquisition for camera {self.camera.serialNumber}")
+            self.camera.start_acquisition()
             
             while self.running and self.acquisition_count < self.total_acquisitions:
                 start_time = time.time()
                 
-                # Start acquisition
-                self.camera.start_acquisition()
-                # Wait for the frame to be ready
-                time.sleep(self.acquisition_interval)
-                # Stop acquisition
-                self.camera.stop_acquisition()
-                
-            
                 frame = self.camera.read_newest_image()
                 if frame is not None:
                     self.image_buffer[self.acquisition_count, :,:] = frame
                     
                 # Update progress
                 self.acquisition_count += 1
-                if self.acquisition_count % 100 == 0:
-                    break
+                
+                # Wait for next frame
+                elapsed_time = time.time() - start_time
+                sleep_time = self.acquisition_interval - elapsed_time
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
 
-                    
         except Exception as e:
             print(f"Error during acquisition for camera {self.camera.serialNumber}: {e}")
             self.running = False
         finally:
+            self.camera.stop_acquisition()
             # Save the acquired data
             if self.acquisition_count > 0:
                 try:
-                    
                     # save_fits_data(self.image_buffer[self.acquisition_count, :,:])
-                    
                     print(f"Saved {self.acquisition_count} frames for camera {self.camera.serialNumber}")
                 except Exception as e:
                     print(f"Error saving data for camera {self.camera.serialNumber}: {e}")
@@ -154,9 +149,6 @@ class CameraMonitorApp:
       
         
         # Creating UI elements
-        self.monitoring = True
-        self.monitor_thread = None
-
         self.camera_queues: Dict[str, Queue] = {}
         self.camera_workers: Dict[str, CameraWorker] = {}
         self.running_experiment = False
@@ -747,20 +739,28 @@ class CameraMonitorApp:
             if hasattr(self, 'preview_thread') and self.preview_thread.is_alive():
                 self.preview_thread.join(timeout=1.0)
             camera.stop_acquisition()
-            self.preview_placeholder.config(text="No Preview Available")
+            self.preview_placeholder.config(text="No Preview Available", image='')
 
     def _update_preview_frame(self, camera):
-        """Update the preview frame in a loop"""
+        """Update the preview frame in a loop from a background thread"""
         while self.preview_active:
             frame = camera.read_newest_image()
             if frame is not None:
-                # Normalize and convert to 8-bit for display
-                frame = cv2.normalize(frame, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-                img = Image.fromarray(frame)
-                imgtk = ImageTk.PhotoImage(image=img)
-                self.preview_placeholder.imgtk = imgtk
-                self.preview_placeholder.config(image=imgtk)
+                # Schedule the GUI update on the main thread
+                self.root.after(0, self._update_gui_with_frame, frame)
             time.sleep(0.03) # ~30 fps
+
+    def _update_gui_with_frame(self, frame):
+        """This method runs on the main GUI thread to update the preview image"""
+        if not self.preview_active:
+            return
+            
+        # Normalize and convert to 8-bit for display
+        frame = cv2.normalize(frame, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+        img = Image.fromarray(frame)
+        imgtk = ImageTk.PhotoImage(image=img)
+        self.preview_placeholder.imgtk = imgtk
+        self.preview_placeholder.config(image=imgtk)
 
     def capture_image(self):
         """Capture an image from the selected camera"""
@@ -797,33 +797,10 @@ class CameraMonitorApp:
 
     def exit_app(self):
         """Clean exit of the application"""
-        self.monitoring = False
-        try:
-            if self.monitor_thread.is_alive():
-                self.monitor_thread.join(timeout=1.0)
-        except Exception as e:
-            print(f"Error stopping monitoring thread: {e}")
-        
         self.root.destroy()
-        
-    def start_monitoring(self):
-        """Start the monitoring thread"""
-        if not self.monitor_thread or not self.monitor_thread.is_alive():
-            self.monitoring = True
-            self.monitor_thread = threading.Thread(target=self.update_acquisition_status, daemon=True)
-            self.monitor_thread.start()
-            print("Camera monitoring started")
-
-    def stop_monitoring(self):
-        """Stop the monitoring thread"""
-        self.monitoring = False
-        if self.monitor_thread and self.monitor_thread.is_alive():
-            self.monitor_thread.join(timeout=1.0)
-            print("Camera monitoring stopped")
 
     def start_experiment(self):
         """Called when starting an experiment"""
-        self.stop_monitoring()  # Stop monitoring during experiment
         self.running_experiment = True
         print("Experiment started")
 
@@ -894,7 +871,6 @@ class CameraMonitorApp:
             worker.stop_worker()
             
         self.running_experiment = False
-        self.start_monitoring()
         messagebox.showinfo("Complete", "Experiment completed successfully!")
     
     def _setup_logging(self, debugLogging):
