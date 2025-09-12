@@ -316,3 +316,148 @@
 [2025-09-12 16:53:27] CameraApplication:INFO:Disconnecting all cameras...
 [2025-09-12 16:53:28] CameraApplication:INFO:Connecting to all cameras...
 [2025-09-12 16:53:31] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:29:30] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:29:30] CameraApplication:INFO:Creating UI
+[2025-09-12 17:29:30] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 17:29:34] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:30:05] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:30:05] CameraApplication:INFO:Creating UI
+[2025-09-12 17:30:05] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 17:30:06] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:30:09] CameraApplication:INFO:Camera 13703 connected successfully.
+[2025-09-12 17:30:09] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:30:09] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:36:07] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:36:54] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:36:54] CameraApplication:INFO:Creating UI
+[2025-09-12 17:36:54] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 17:36:58] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:36:58] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 17:36:58] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:36:58] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:37:08] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:37:08] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 17:37:08] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:37:08] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:37:11] CameraApplication:INFO:Disconnecting all cameras...
+[2025-09-12 17:37:13] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:37:13] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 17:37:13] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:37:13] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:37:15] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:37:15] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 17:37:15] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:37:15] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:37:24] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:37:24] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 17:37:24] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:37:24] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:37:31] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:37:31] CameraApplication:INFO:Creating UI
+[2025-09-12 17:37:31] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 17:37:32] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:37:32] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 17:37:32] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:37:32] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:37:43] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:37:43] CameraApplication:INFO:Creating UI
+[2025-09-12 17:37:43] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 17:37:45] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:37:45] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 17:37:45] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:37:45] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:38:03] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:38:03] CameraApplication:INFO:Creating UI
+[2025-09-12 17:38:03] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 17:38:05] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:38:08] CameraApplication:INFO:Camera 13703 connected successfully.
+[2025-09-12 17:38:08] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:38:08] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:38:09] CameraApplication:INFO:Disconnecting all cameras...
+[2025-09-12 17:38:42] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:38:42] CameraApplication:INFO:Creating UI
+[2025-09-12 17:38:42] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 17:38:46] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:38:46] CameraApplication:INFO:Creating UI
+[2025-09-12 17:38:46] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 17:38:50] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:38:53] CameraApplication:INFO:Camera 13703 connected successfully.
+[2025-09-12 17:38:53] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:38:53] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:38:56] CameraApplication:INFO:Disconnecting all cameras...
+[2025-09-12 17:38:57] CameraApplication:INFO:Camera 13703 disconnected.
+[2025-09-12 17:38:59] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:39:02] CameraApplication:INFO:Camera 13703 connected successfully.
+[2025-09-12 17:39:02] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:39:02] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:39:04] CameraApplication:INFO:Disconnecting all cameras...
+[2025-09-12 17:39:06] CameraApplication:INFO:Camera 13703 disconnected.
+[2025-09-12 17:40:33] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:40:33] CameraApplication:INFO:Creating UI
+[2025-09-12 17:40:33] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 17:40:52] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:40:55] CameraApplication:INFO:Camera 13703 connected successfully.
+[2025-09-12 17:42:04] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:42:04] CameraApplication:INFO:Creating UI
+[2025-09-12 17:42:04] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 17:42:11] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:42:14] CameraApplication:INFO:Camera 13703 connected successfully.
+[2025-09-12 17:55:03] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:55:03] CameraApplication:INFO:Creating UI
+[2025-09-12 17:55:03] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 17:55:09] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:55:09] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 17:55:09] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:55:09] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:55:12] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:55:12] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 17:55:12] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:55:12] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:55:21] CameraApplication:INFO:Disconnecting all cameras...
+[2025-09-12 17:55:22] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:55:22] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 17:55:22] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:55:22] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:55:23] CameraApplication:INFO:Disconnecting all cameras...
+[2025-09-12 17:55:49] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:56:29] CameraApplication:INFO:Creating UI
+[2025-09-12 17:56:29] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 17:56:39] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:56:39] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 17:56:39] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 17:56:39] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 17:57:32] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 17:57:38] CameraApplication:INFO:Creating UI
+[2025-09-12 17:57:38] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 17:58:50] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 17:59:01] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 17:59:03] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 18:00:09] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 18:00:09] CameraApplication:INFO:Creating UI
+[2025-09-12 18:00:09] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 18:01:29] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 18:01:29] CameraApplication:INFO:Creating UI
+[2025-09-12 18:01:29] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 18:03:01] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 18:04:02] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 18:05:41] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 18:06:08] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 18:06:08] CameraApplication:INFO:Creating UI
+[2025-09-12 18:06:08] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 18:06:11] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 18:06:15] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 18:06:16] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 18:06:39] CameraApplication:ERROR:Failed to connect to camera 12574.
+[2025-09-12 18:07:59] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 18:07:59] CameraApplication:INFO:Creating UI
+[2025-09-12 18:07:59] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 18:08:01] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 18:08:05] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 18:08:06] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 18:08:36] CameraApplication:INFO:Logging level set to INFO
+[2025-09-12 18:08:36] CameraApplication:INFO:Creating UI
+[2025-09-12 18:08:36] CameraApplication:INFO:Setting up camera status display
+[2025-09-12 18:08:39] CameraApplication:INFO:Connecting to all cameras...
+[2025-09-12 18:08:41] CameraApplication:ERROR:Failed to connect to camera 13703.
+[2025-09-12 18:08:41] CameraApplication:ERROR:Failed to connect to camera 12606.
+[2025-09-12 18:09:08] CameraApplication:ERROR:Failed to connect to camera 12574.

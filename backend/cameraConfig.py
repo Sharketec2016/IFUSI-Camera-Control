@@ -105,36 +105,40 @@ class AndoriXonCamera():
         }
         self.cam_config = configDict
         self.logger.info(f"Configuring camera {self.serialNumber} with config: {configDict}")
-        try:
-                self.cameraObj.set_acquisition_mode(mode = configDict['acquisitionMode'])
-                self.cameraObj.set_trigger_mode(mode = configDict['triggeringMode'])
-                self.cameraObj.set_read_mode(mode = configDict['readoutMode'])
-                self.cameraObj.set_exposure(exposure=configDict['exposureTime'])
-                self.cameraObj.set_EMCCD_gain(gain=configDict['emGain']['gainLevel'], advanced=configDict['emGain']['state'])
-                self.cameraObj.setup_shutter(mode=configDict['shutterSettings']['mode'])
-                self.cameraObj.set_fan_mode(mode=configDict['fanLevel'])
-                self.cameraObj.setup_kinetic_mode(num_cycle=configDict['acquisitionNumber'])
-                self.cameraObj.enable_frame_transfer_mode(enable=configDict['frameTransfer'])
-                self.cameraObj.setup_image_mode() #letting default values be passed
-                self.cameraObj.set_amp_mode(channel = configDict['ampMode']['channel'],
-                                    oamp = configDict['ampMode']['oamp'],
-                                    hsspeed = configDict['ampMode']['hsspeed'],
-                                    preamp = configDict['ampMode']['preamp']
-                                    )
-                self.cameraObj.set_vsspeed(configDict['verticalShift']['shiftSpeed'])
-                self.cameraObj.set_temperature(configDict['temperatureSetpoint'])
-                self.acquistion_configuration(cameraDict)
 
-                if not self.cameraObj.is_metadata_enabled():
-                    self.cameraObj.enable_metadata()
+        if self.cameraObj:
+            if self.cameraObj.is_opened():
+                try:
+                        self.cameraObj.set_fan_mode(mode=configDict['fanLevel'])
+                        self.cameraObj.set_acquisition_mode(mode = configDict['acquisitionMode'])
+                        self.cameraObj.set_trigger_mode(mode = configDict['triggeringMode'])
+                        self.cameraObj.set_read_mode(mode = configDict['readoutMode'])
+                        self.cameraObj.set_exposure(exposure=configDict['exposureTime'])
+                        self.cameraObj.set_EMCCD_gain(gain=configDict['emGain']['gainLevel'], advanced=configDict['emGain']['state'])
+                        self.cameraObj.setup_shutter(mode=configDict['shutterSettings']['mode'])
+                        self.cameraObj.setup_kinetic_mode(num_cycle=configDict['acquisitionNumber'])
+                        self.cameraObj.enable_frame_transfer_mode(enable=configDict['frameTransfer'])
+                        self.cameraObj.setup_image_mode() #letting default values be passed
+                        self.cameraObj.set_amp_mode(channel = configDict['ampMode']['channel'],
+                                            oamp = configDict['ampMode']['oamp'],
+                                            hsspeed = configDict['ampMode']['hsspeed'],
+                                            preamp = configDict['ampMode']['preamp']
+                                            )
+                        self.cameraObj.set_vsspeed(configDict['verticalShift']['shiftSpeed'])
+                        self.cameraObj.set_temperature(configDict['temperatureSetpoint'])
+                        # self.acquistion_configuration(cameraDict)
 
-                self.is_configured = CameraState.CONFIGURED
-                self.logger.info(f"Camera {self.serialNumber} configured successfully")
-                return True
-        except Exception as e:
-            self.logger.error(f"Camera {self.serialNumber} configuration failed: {e}")
-            self.is_configured = CameraState.NOT_CONFIGURED
-            return False
+                        if not self.cameraObj.is_metadata_enabled():
+                            self.cameraObj.enable_metadata()
+
+                        self.is_configured = CameraState.CONFIGURED
+                        self.logger.info(f"Camera {self.serialNumber} configured successfully")
+                        return True
+                except Exception as e:
+                    self.logger.error(f"Camera {self.serialNumber} configuration failed: {e}")
+                    self.is_configured = CameraState.NOT_CONFIGURED
+                    return False
+        return True
     
     def acquistion_configuration(self, cameraDict):
         # cameraObj, acqDict = cameraDict['Camera'], cameraDict['AcqConfiguration']
@@ -145,9 +149,9 @@ class AndoriXonCamera():
     def get_cam_config(self):
         return self.cam_config
 
-    def connect(self):
+    def connect(self, camIndex):
         try:
-            self.cameraObj = Andor.AndorSDK2Camera(idx=self.camIndex, temperature=None, fan_mode='full', amp_mode=None)
+            self.cameraObj = Andor.AndorSDK2Camera(idx=camIndex, temperature=None, fan_mode='full', amp_mode=None)
             if self.cameraObj.is_opened():
                 self.is_connected = CameraState.CONNECTED
                 self.logger.info(f"Camera {self.serialNumber} is connected")

@@ -30,43 +30,6 @@ path_to_config_options_json = "./backend/configuration_options.json"
 cam_config_options_json = None
 
 
-class CameraDrivers:
-    def get_camera_status(self, serial_number):
-        """
-        Placeholder function to get camera status.
-        Returns True if camera is working, False otherwise.
-        Replace with your actual implementation.
-        """
-        # Simulating random status - replace with your actual implementation
-        import random
-        return random.choice([True, False])
-    
-    def get_camera_serial_numbers(self):
-        """
-        Placeholder function to get all camera serial numbers.
-        Replace with your actual implementation.
-        """
-        # Simulating 4 camera serial numbers - replace with your actual implementation
-        return ["1234567", "7654321", "9876543", "5432109"]
-    
-    def capture_image(self, serial_number):
-        """
-        Placeholder function to capture image from a specific camera.
-        Replace with your actual implementation.
-        """
-        print(f"Capturing image from camera {serial_number}")
-        # Simulating success - replace with your actual implementation
-        return True
-    
-    def configure_camera(self, serial_number, settings):
-        """
-        Placeholder function to configure a specific camera.
-        Replace with your actual implementation.
-        """
-        print(f"Configuring camera {serial_number} with settings: {settings}")
-        # Simulating success - replace with your actual implementation
-        return True
-
 class CameraWorker:
     def __init__(self, camera, command_queue: Queue):
         self.camera = camera
@@ -175,10 +138,6 @@ class CameraMonitorApp:
         self.camera3 = AndoriXonCamera(camIndex=2, serialNumber=serial_numbers[2])
         # self.camera4 = AndoriXonCamera(camIndex=3, serialNumber=13579)
         self.cameras = [self.camera1, self.camera2, self.camera3]#, self.camera4]
-        # self.cameras = [] #TODO remove this later.
-        # Get camera serial numbers: TODO change this to search for all connected devices and find the cameras that way
-        # self.camera_serials = [self.camera1.serialNumber, self.camera2.serialNumber, self.camera3.serialNumber, self.camera4.serialNumber]
-        # self.camera_serials = ["13703", "12606", "12574"]#, "5432109"]
         self.camera_serials = [cam.serialNumber for cam in self.cameras]
         self.cameras2 = {}
         self.__create_camera_dict__()    
@@ -229,6 +188,10 @@ class CameraMonitorApp:
             'nframes': 10,
             'overflowBehavior': 'restart'
         }
+
+        for cam in self.cameras:
+            cam.camera_configuration(None)
+
         self.create_ui()
  
     def __create_camera_dict__(self):
@@ -395,15 +358,18 @@ class CameraMonitorApp:
     def connect_all_cameras(self):
         """Connect to all cameras and update their status."""
         self.logger.info("Connecting to all cameras...")
+        camidx = 0
         for serial in self.camera_serials:
             camera = self.cameras2[serial]
             try:
-                if camera.connect():
-                    self.camera_labels[serial]["status_label"].config(text="Connected", fg="green")
+                if camera.connect(camidx):
+                    self.camera_labels[serial]["status_label"].config(text="Connected", foreground="green")
                     self.camera_labels[serial]["serial_label"].config(fg="green")
                     self.logger.info(f"Camera {serial} connected successfully.")
+                    camera.camera_configuration(None)
+                    camidx += 1
                 else:
-                    self.camera_labels[serial]["status_label"].config(text="Connection Failed", fg="red")
+                    self.camera_labels[serial]["status_label"].config(text="Connection Failed", foreground="red")
                     self.camera_labels[serial]["serial_label"].config(fg="red")
                     self.logger.error(f"Failed to connect to camera {serial}.")
             except Exception as e:
@@ -418,11 +384,11 @@ class CameraMonitorApp:
             camera = self.cameras2[serial]
             try:
                 if camera.disconnect():
-                    self.camera_labels[serial]["status_label"].config(text="Disconnected", fg="black")
+                    self.camera_labels[serial]["status_label"].config(text="Disconnected", foreground="black")
                     self.camera_labels[serial]["serial_label"].config(fg="red")
                     self.logger.info(f"Camera {serial} disconnected.")
                 else:
-                    self.camera_labels[serial]["status_label"].config(text="Disconnected", fg="black")
+                    self.camera_labels[serial]["status_label"].config(text="Disconnected", foreground="black")
                     self.camera_labels[serial]["serial_label"].config(fg="red")
 
             except Exception as e:
@@ -592,7 +558,8 @@ class CameraMonitorApp:
 
         camera = self.cameras2[serialNumber]
         if not hasattr(camera, 'cam_config') or not camera.cam_config:
-            camera.camera_configuration() # Create a default config if it doesn't exist
+            if camera.is_connected == CameraState.CONNECTED:
+                camera.camera_configuration() # Create a default config if it doesn't exist
 
         config = camera.cam_config
 
