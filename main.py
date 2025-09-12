@@ -26,7 +26,7 @@ import json
 
 serial_numbers = ["13703", "12606", "12574"]
 save_data_path = ""
-path_to_config_options_json = "/home/matt/Documents/Southern_Graduate/Astro /Python Coding/Python_Scripts/backend/configuration_options.json"
+path_to_config_options_json = "./backend/configuration_options.json"
 cam_config_options_json = None
 
 
