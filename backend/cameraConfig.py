@@ -24,13 +24,16 @@ class CameraState(Enum):
 
 
 class AndoriXonCamera():
-    def __init__(self, camIndex, serialNumber):
-        self.serialNumber = serialNumber
+    def __init__(self):
+        self.serialNumber = None
 
         self.cam_config = dict()
-        self.camIndex = camIndex
+        self.camIndex = None
         self.cameraObj = None
         self.cam_config = None
+        self.head_model = None
+        self.controller_mode = None
+
         
         self.is_connected = CameraState.DISCONNECTED
         self.is_in_acquisition = CameraState.NOT_ACQUIRING
@@ -127,10 +130,6 @@ class AndoriXonCamera():
                         self.cameraObj.set_vsspeed(configDict['verticalShift']['shiftSpeed'])
                         self.cameraObj.set_temperature(configDict['temperatureSetpoint'])
                         # self.acquistion_configuration(cameraDict)
-
-                        if not self.cameraObj.is_metadata_enabled():
-                            self.cameraObj.enable_metadata()
-
                         self.is_configured = CameraState.CONFIGURED
                         self.logger.info(f"Camera {self.serialNumber} configured successfully")
                         return True

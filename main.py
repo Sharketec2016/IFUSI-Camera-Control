@@ -23,6 +23,7 @@ import logging as log
 import sys
 from pprint import pprint
 import json
+import pylablib.devices.Andor as Andor
 
 serial_numbers = ["13703", "12606", "12574"]
 save_data_path = ""
@@ -133,15 +134,13 @@ class CameraMonitorApp:
         self.cam_config_options_json = cam_config_options_json
         
         # Initialize camera drivers: TODO Change this to the actual camera driver library.
-        self.camera1 = AndoriXonCamera(camIndex=0, serialNumber=serial_numbers[0])
-        self.camera2 = AndoriXonCamera(camIndex=1, serialNumber=serial_numbers[1])
-        self.camera3 = AndoriXonCamera(camIndex=2, serialNumber=serial_numbers[2])
-        # self.camera4 = AndoriXonCamera(camIndex=3, serialNumber=13579)
-        self.cameras = [self.camera1, self.camera2, self.camera3]#, self.camera4]
-        self.camera_serials = [cam.serialNumber for cam in self.cameras]
+        # self.cameras = [self.camera1, self.camera2, self.camera3]#, self.camera4]
+        # self.cameras2 = {}
+        self.cameras = []
+        self.__identify_cameras__()
         self.cameras2 = {}
-        self.__create_camera_dict__()    
-        
+        self.camera_serials = ["13703", "12606", "12574"]
+
 
       
         
@@ -189,15 +188,36 @@ class CameraMonitorApp:
             'overflowBehavior': 'restart'
         }
 
-        for cam in self.cameras:
-            cam.camera_configuration(None)
 
         self.create_ui()
- 
-    def __create_camera_dict__(self):
-        self.cameras2 = {
-            f"{cam.serialNumber}" : cam for cam in self.cameras
-        }
+
+
+    def __identify_cameras__(self):
+        try:
+            num_cameras = Andor.get_cameras_number_SDK2()
+            if(num_cameras == 0):
+                self.cameras = None
+                return
+            # for i in range(num_cameras):
+            #     cam = AndoriXonCamera(camIndex=i)
+            #     info = cam.cameraObj.get_device_info()
+            #     cam.serialNumber = info["serial_number"]
+            #     cam.head_model = info["head_model"]
+            #     cam.controller_mode = info["controller_mode"]
+            #     cam.camera_configuration(None)
+            #     self.cameras.append(cam)
+            #
+            #     self.logger.info(f"Successfully identified camera {cam.camIndex}")
+            #     self.logger.info(f"     Serial number: {cam.serialNumber}")
+            #     self.logger.info(f"     Model: {cam.head_model}")
+            #     self.logger.info(f"     Controller Mode: {cam.controller_mode}")
+            print(f"Number of cameras detected: {num_cameras}")
+            self.logger.info(f"Number of cameras detected: {num_cameras}")
+
+
+
+        except Exception as e:
+            print(f"Error identifying cameras: {e}")
         
     def setup_camera_workers(self):
         """Initialize worker threads for each camera"""
@@ -223,27 +243,27 @@ class CameraMonitorApp:
         self.status_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.status_frame, text="Camera Status")
         
-        # Create camera configuration tab
-        self.config_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.config_frame, text="Camera Configuration")
-        
-        self.notes_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.notes_frame, text="FITS Header")
-        
-        # # Create camera preview tab: TODO may add this back later as a sanity check when using the cameras right before a run.
-        self.preview_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.preview_frame, text="Camera Preview")
-        
+        # # Create camera configuration tab
+        # self.config_frame = ttk.Frame(self.notebook)
+        # self.notebook.add(self.config_frame, text="Camera Configuration")
+        #
+        # self.notes_frame = ttk.Frame(self.notebook)
+        # self.notebook.add(self.notes_frame, text="FITS Header")
+        #
+        # # # Create camera preview tab: TODO may add this back later as a sanity check when using the cameras right before a run.
+        # self.preview_frame = ttk.Frame(self.notebook)
+        # self.notebook.add(self.preview_frame, text="Camera Preview")
+
         # Setup the camera status display
         self.setup_status_display()
-        
-        # Setup the camera configuration options
-        self.setup_config_options()
-        
-        self.setup_notes_display()
-        
-        # # Setup the camera preview options
-        self.setup_preview_options()
+        #
+        # # Setup the camera configuration options
+        # self.setup_config_options()
+        #
+        # self.setup_notes_display()
+        #
+        # # # Setup the camera preview options
+        # self.setup_preview_options()
         
         # Button frame at the bottom
         self.button_frame = ttk.Frame(self.main_frame)
@@ -355,42 +375,85 @@ class CameraMonitorApp:
         disconnect_all_btn = ttk.Button(ops_frame, text="Disconnect All", command=self.disconnect_all_cameras)
         disconnect_all_btn.pack(side=tk.LEFT, padx=5)
 
+
+
+    def check_if_idx_connected_already(self, cam_index):
+        for sn, cam in self.cameras2.items():
+            if cam.camIndex ==  cam_index:
+                return True
+        return False
+
+
     def connect_all_cameras(self):
         """Connect to all cameras and update their status."""
         self.logger.info("Connecting to all cameras...")
-        camidx = 0
-        for serial in self.camera_serials:
-            camera = self.cameras2[serial]
-            try:
-                if camera.connect(camidx):
-                    self.camera_labels[serial]["status_label"].config(text="Connected", foreground="green")
-                    self.camera_labels[serial]["serial_label"].config(fg="green")
-                    self.logger.info(f"Camera {serial} connected successfully.")
-                    camera.camera_configuration(None)
-                    camidx += 1
-                else:
-                    self.camera_labels[serial]["status_label"].config(text="Connection Failed", foreground="red")
-                    self.camera_labels[serial]["serial_label"].config(fg="red")
-                    self.logger.error(f"Failed to connect to camera {serial}.")
-            except Exception as e:
-                self.camera_labels[serial]["status_label"].config(text="Error", fg="red")
-                self.camera_labels[serial]["serial_label"].config(fg="red")
-                self.logger.error(f"Error connecting to camera {serial}: {e}")
+
+        try:
+            num_cameras = Andor.get_cameras_number_SDK2()
+            if (num_cameras == 0):
+                self.logger.error(f"No cameras were detected when trying to connect to all cameras.")
+                if self.logger.level == log.DEBUG:
+                    print(f"No cameras were detected when trying to connect to all cameras.")
+                return
+
+            for i in range(num_cameras):
+                cam = AndoriXonCamera()
+
+
+                if not self.check_if_idx_connected_already(i):
+                    if cam.connect(camIndex=i):
+                        try:
+                            info = cam.cameraObj.get_device_info()
+                            cam.serialNumber = str(info[2])
+                            cam.head_model = info[1]
+                            cam.controller_mode = info[0]
+                            cam.camIndex = i
+                            cam.camera_configuration(None)
+                            self.cameras.append(cam)
+                            self.cameras2.update(
+                                {
+                                    cam.serialNumber: cam
+                                }
+                            )
+
+                            self.camera_labels[cam.serialNumber]["status_label"].config(text="Connected", foreground="green")
+                            self.camera_labels[cam.serialNumber]["serial_label"].config(fg="green")
+                            self.logger.info(f"Camera {cam.serialNumber} connected successfully.")
+
+                            self.logger.info(f"Successfully identified camera {cam.camIndex}")
+                            self.logger.info(f"     Serial number: {cam.serialNumber}")
+                            self.logger.info(f"     Model: {cam.head_model}")
+                            self.logger.info(f"     Controller Mode: {cam.controller_mode}")
+                        except Exception as e:
+                            # self.camera_labels[cam.serialNumber]["status_label"].config(text="Error", fg="red")
+                            # self.camera_labels[cam.serialNumber]["serial_label"].config(fg="red")
+                            self.logger.error(f"Error connecting to camera at index {i}: {e}")
+                            cam.disconnect()
+                    else:
+                        self.logger.error(f"Failed to connect to camera {cam.serialNumber}.")
+
+
+
+
+        except Exception as e:
+            self.logger.error(f"Failed within connecting to all cameras {e}")
+            if self.logger.level == log.DEBUG:
+                print(f"Failed to connect cameras: {e}")
+
 
     def disconnect_all_cameras(self):
         """Disconnect all cameras and update their status."""
         self.logger.info("Disconnecting all cameras...")
-        for serial in self.camera_serials:
-            camera = self.cameras2[serial]
+        for cam in self.cameras:
+            serial = cam.serialNumber
             try:
-                if camera.disconnect():
+                if cam.disconnect():
                     self.camera_labels[serial]["status_label"].config(text="Disconnected", foreground="black")
                     self.camera_labels[serial]["serial_label"].config(fg="red")
                     self.logger.info(f"Camera {serial} disconnected.")
                 else:
-                    self.camera_labels[serial]["status_label"].config(text="Disconnected", foreground="black")
+                    self.camera_labels[serial]["status_label"].config(text="Error", foreground="black")
                     self.camera_labels[serial]["serial_label"].config(fg="red")
-
             except Exception as e:
                 self.camera_labels[serial]["status_label"].config(text="Error", fg="red")
                 self.logger.error(f"Error disconnecting from camera {serial}: {e}")
@@ -872,6 +935,8 @@ class CameraMonitorApp:
             logger.addHandler(handler)
         logger.info(f"Logging level set to {'DEBUG' if debugLogging else 'INFO'}")
         return logger
+
+
 
 def main():
     args = sys.argv #pass in command line arguments.
