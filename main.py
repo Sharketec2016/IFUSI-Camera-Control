@@ -135,10 +135,10 @@ class CameraMonitorApp:
         
         # Initialize camera drivers: TODO Change this to the actual camera driver library.
         # self.cameras = [self.camera1, self.camera2, self.camera3]#, self.camera4]
-        # self.cameras2 = {}
+        # self.cameras_dict = {}
         self.cameras = []
         self.__identify_cameras__()
-        self.cameras2 = {}
+        self.cameras_dict = {}
         self.camera_serials = ["13703", "12606", "12574"]
 
 
@@ -197,32 +197,20 @@ class CameraMonitorApp:
             num_cameras = Andor.get_cameras_number_SDK2()
             if(num_cameras == 0):
                 self.cameras = None
-                return
-            # for i in range(num_cameras):
-            #     cam = AndoriXonCamera(camIndex=i)
-            #     info = cam.cameraObj.get_device_info()
-            #     cam.serialNumber = info["serial_number"]
-            #     cam.head_model = info["head_model"]
-            #     cam.controller_mode = info["controller_mode"]
-            #     cam.camera_configuration(None)
-            #     self.cameras.append(cam)
-            #
-            #     self.logger.info(f"Successfully identified camera {cam.camIndex}")
-            #     self.logger.info(f"     Serial number: {cam.serialNumber}")
-            #     self.logger.info(f"     Model: {cam.head_model}")
-            #     self.logger.info(f"     Controller Mode: {cam.controller_mode}")
+                return None
             print(f"Number of cameras detected: {num_cameras}")
             self.logger.info(f"Number of cameras detected: {num_cameras}")
-
-
-
+            if num_cameras < 1:
+                self.logger.error(f"ERROR: No cameras were detected when program was started.")
+            return num_cameras
         except Exception as e:
             print(f"Error identifying cameras: {e}")
+        return 0
         
     def setup_camera_workers(self):
         """Initialize worker threads for each camera"""
         self.logger.info("Setting up camera workers")
-        for camera in list(self.cameras2.values()):
+        for camera in list(self.cameras_dict.values()):
             queue = Queue()
             worker = CameraWorker(camera, queue)
             self.camera_queues[camera.serialNumber] = queue
@@ -246,23 +234,23 @@ class CameraMonitorApp:
         # # Create camera configuration tab
         # self.config_frame = ttk.Frame(self.notebook)
         # self.notebook.add(self.config_frame, text="Camera Configuration")
-        #
-        # self.notes_frame = ttk.Frame(self.notebook)
-        # self.notebook.add(self.notes_frame, text="FITS Header")
-        #
-        # # # Create camera preview tab: TODO may add this back later as a sanity check when using the cameras right before a run.
+
+        self.notes_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.notes_frame, text="FITS Header")
+
+        # # Create camera preview tab: TODO may add this back later as a sanity check when using the cameras right before a run.
         # self.preview_frame = ttk.Frame(self.notebook)
         # self.notebook.add(self.preview_frame, text="Camera Preview")
 
         # Setup the camera status display
         self.setup_status_display()
-        #
-        # # Setup the camera configuration options
+
+        # Setup the camera configuration options
         # self.setup_config_options()
-        #
-        # self.setup_notes_display()
-        #
-        # # # Setup the camera preview options
+
+        self.setup_notes_display()
+
+        # # Setup the camera preview options
         # self.setup_preview_options()
         
         # Button frame at the bottom
@@ -292,7 +280,7 @@ class CameraMonitorApp:
                 )
                 
                 curr_header = self.notes_text.get("1.0", tk.END)
-                curr_data = [cam.data for cam in list(self.cameras2.values())]
+                curr_data = [cam.data for cam in list(self.cameras_dict.values())]
                 
                 for data in curr_data:
                     save_fits_data(curr_header, data, save_data_path)
@@ -375,66 +363,48 @@ class CameraMonitorApp:
         disconnect_all_btn = ttk.Button(ops_frame, text="Disconnect All", command=self.disconnect_all_cameras)
         disconnect_all_btn.pack(side=tk.LEFT, padx=5)
 
-
-
     def check_if_idx_connected_already(self, cam_index):
-        for sn, cam in self.cameras2.items():
+        for sn, cam in self.cameras_dict.items():
             if cam.camIndex ==  cam_index:
                 return True
         return False
 
-
     def connect_all_cameras(self):
         """Connect to all cameras and update their status."""
         self.logger.info("Connecting to all cameras...")
-
         try:
-            num_cameras = Andor.get_cameras_number_SDK2()
-            if (num_cameras == 0):
-                self.logger.error(f"No cameras were detected when trying to connect to all cameras.")
-                if self.logger.level == log.DEBUG:
-                    print(f"No cameras were detected when trying to connect to all cameras.")
-                return
-
-            for i in range(num_cameras):
-                cam = AndoriXonCamera()
-
-
-                if not self.check_if_idx_connected_already(i):
-                    if cam.connect(camIndex=i):
-                        try:
-                            info = cam.cameraObj.get_device_info()
-                            cam.serialNumber = str(info[2])
-                            cam.head_model = info[1]
-                            cam.controller_mode = info[0]
-                            cam.camIndex = i
-                            cam.camera_configuration(None)
-                            self.cameras.append(cam)
-                            self.cameras2.update(
-                                {
-                                    cam.serialNumber: cam
-                                }
-                            )
-
-                            self.camera_labels[cam.serialNumber]["status_label"].config(text="Connected", foreground="green")
-                            self.camera_labels[cam.serialNumber]["serial_label"].config(fg="green")
-                            self.logger.info(f"Camera {cam.serialNumber} connected successfully.")
-
-                            self.logger.info(f"Successfully identified camera {cam.camIndex}")
-                            self.logger.info(f"     Serial number: {cam.serialNumber}")
-                            self.logger.info(f"     Model: {cam.head_model}")
-                            self.logger.info(f"     Controller Mode: {cam.controller_mode}")
-                        except Exception as e:
-                            # self.camera_labels[cam.serialNumber]["status_label"].config(text="Error", fg="red")
-                            # self.camera_labels[cam.serialNumber]["serial_label"].config(fg="red")
-                            self.logger.error(f"Error connecting to camera at index {i}: {e}")
-                            cam.disconnect()
-                    else:
-                        self.logger.error(f"Failed to connect to camera {cam.serialNumber}.")
+            num_cameras = self.__identify_cameras__()
+            if num_cameras:
+                for i in range(num_cameras):
+                    cam = AndoriXonCamera()
+                    if not self.check_if_idx_connected_already(i):
+                        if cam.connect(camIndex=i):
+                            try:
+                                info = cam.cameraObj.get_device_info()
+                                cam.serialNumber = str(info[2])
+                                cam.head_model = info[1]
+                                cam.controller_mode = info[0]
+                                cam.camIndex = i
+                                cam.camera_configuration(None)
+                                self.cameras.append(cam)
+                                self.cameras_dict.update( {cam.serialNumber: cam} )
 
 
+                                self.camera_labels[cam.serialNumber]["status_label"].config(text="Connected", foreground="green")
+                                self.camera_labels[cam.serialNumber]["serial_label"].config(fg="green")
+                                self.logger.info(f"Camera {cam.serialNumber} connected successfully.")
 
-
+                                self.logger.info(f"Successfully identified camera {cam.camIndex}")
+                                self.logger.info(f"     Serial number: {cam.serialNumber}")
+                                self.logger.info(f"     Model: {cam.head_model}")
+                                self.logger.info(f"     Controller Mode: {cam.controller_mode}")
+                            except Exception as e:
+                                # self.camera_labels[cam.serialNumber]["status_label"].config(text="Error", fg="red")
+                                # self.camera_labels[cam.serialNumber]["serial_label"].config(fg="red")
+                                self.logger.error(f"Error connecting to camera at index {i}: {e}")
+                                cam.disconnect()
+                        else:
+                            self.logger.error(f"Failed to connect to camera {cam.serialNumber}.")
         except Exception as e:
             self.logger.error(f"Failed within connecting to all cameras {e}")
             if self.logger.level == log.DEBUG:
@@ -462,7 +432,7 @@ class CameraMonitorApp:
         """Refresh the status of all cameras."""
         self.logger.info("Refreshing all camera statuses...")
         for serial in self.camera_serials:
-            camera = self.cameras2[serial]
+            camera = self.cameras_dict[serial]
             try:
                 if camera.connection_status():
                     self.camera_labels[serial]["status_label"].config(text="Connected", fg="green")
@@ -474,20 +444,66 @@ class CameraMonitorApp:
                 self.camera_labels[serial]["status_label"].config(text="Error", fg="red")
                 self.logger.error(f"Error refreshing status for camera {serial}: {e}")
 
-    def save_notes(self):
+    def save_fits_header(self):
         """Save the content of the notes text area to a file."""
-        self.logger.info("save_notes method called - not implemented")
-        showinfo("Not Implemented", "Save notes functionality is not yet implemented.")
+        # Ask the user for a file path to save to
+        filepath = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")],
+            title="Save Notes As"
+        )
+
+        # If the user cancels the dialog, filepath will be empty
+        if not filepath:
+            return
+
+        try:
+            # Open the file in write mode ('w') and save the content
+            with open(filepath, "w") as output_file:
+                text_content = self.notes_text.get("1.0", tk.END)
+                output_file.write(text_content)
+            # Log the action and notify the user
+            self.logger.info(f"Notes saved to {filepath}")
+            messagebox.showinfo("Success", f"Notes successfully saved to:\n{filepath}")
+        except Exception as e:
+            # Log the error and show an error message
+            self.logger.error(f"Error saving notes: {e}")
+            messagebox.showerror("Error", f"Failed to save notes:\n{e}")
 
     def load_notes(self):
         """Load content into the notes text area from a file."""
-        self.logger.info("load_notes method called - not implemented")
-        showinfo("Not Implemented", "Load notes functionality is not yet implemented.")
+        # Ask the user to select a file to open
+        filepath = filedialog.askopenfilename(
+            filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")],
+            title="Open Notes File"
+        )
+
+        # If the user cancels the dialog, filepath will be empty
+        if not filepath:
+            return
+
+        try:
+            # Open the file in read mode ('r') and load the content
+            with open(filepath, "r") as input_file:
+                text_content = input_file.read()
+
+                # Clear the existing content in the text box
+                self.notes_text.delete("1.0", tk.END)
+
+                # Insert the new content from the file
+                self.notes_text.insert(tk.END, text_content)
+            # Log the action and notify the user
+            self.logger.info(f"Notes loaded from {filepath}")
+            messagebox.showinfo("Success", f"Notes successfully loaded from:\n{filepath}")
+        except Exception as e:
+            # Log the error and show an error message
+            self.logger.error(f"Error loading notes: {e}")
+            messagebox.showerror("Error", f"Failed to load notes:\n{e}")
     
     def save_values(self):
         serialNumber = self.selected_camera.get()
         # self.config_serial_number = serialNumber
-        configDict = self.cameras2[serialNumber].cam_config
+        configDict = self.cameras_dict[serialNumber].cam_config
         for key, value in configDict.items():
             if type(value) == dict:
                 for k2, v2 in value.items():
@@ -502,7 +518,7 @@ class CameraMonitorApp:
                         new_val = self.config_entrys_dict[key][k2].get()
 
                     self.config_labels_dict[key][k2].config(text=new_val)
-                    self.cameras2[serialNumber].cam_config[key][k2] = new_val
+                    self.cameras_dict[serialNumber].cam_config[key][k2] = new_val
             else:
                 try:
                     var = self.config_vars.get(key, None)
@@ -514,7 +530,7 @@ class CameraMonitorApp:
                     new_val = self.config_entrys_dict[key].get()
 
                 self.config_labels_dict[key].config(text=new_val)
-                self.cameras2[serialNumber].cam_config[key] = new_val
+                self.cameras_dict[serialNumber].cam_config[key] = new_val
         
     def setup_config_options(self):
         """Setup the camera configuration options"""
@@ -616,10 +632,10 @@ class CameraMonitorApp:
 
     def _update_config_display(self, event=None):
         serialNumber = self.selected_camera.get()
-        if not serialNumber or serialNumber not in self.cameras2:
+        if not serialNumber or serialNumber not in self.cameras_dict:
             return # No camera selected or camera not found
 
-        camera = self.cameras2[serialNumber]
+        camera = self.cameras_dict[serialNumber]
         if not hasattr(camera, 'cam_config') or not camera.cam_config:
             if camera.is_connected == CameraState.CONNECTED:
                 camera.camera_configuration() # Create a default config if it doesn't exist
@@ -712,7 +728,7 @@ class CameraMonitorApp:
         
         # Add Save and Load buttons
         save_btn = ttk.Button(button_frame, text="Save Header", 
-                            command=self.save_notes)
+                            command=self.save_fits_header)
         save_btn.pack(side=tk.LEFT, padx=5)
         
         load_btn = ttk.Button(button_frame, text="Load Header", 
@@ -723,7 +739,7 @@ class CameraMonitorApp:
         if not serialNumber:
             serialNumber = self.selected_camera.get()
             
-        camera = self.cameras2[serialNumber]
+        camera = self.cameras_dict[serialNumber]
         if not hasattr(camera, 'cam_config'):
             camera.camera_configuration()
 
@@ -784,7 +800,7 @@ class CameraMonitorApp:
                     tmpReplaceDict[key] = float(tmp_val)
                 except Exception:
                     tmpReplaceDict[key] = tmp_val
-        self.cameras2[serialNumber].cam_config = tmpReplaceDict
+        self.cameras_dict[serialNumber].cam_config = tmpReplaceDict
         pprint(tmpReplaceDict)
 
     def toggle_preview(self, start):
