@@ -190,6 +190,7 @@ class CameraMonitorApp:
 
 
         self.create_ui()
+        self.check_camera_conection()
 
 
     def __identify_cameras__(self):
@@ -258,8 +259,8 @@ class CameraMonitorApp:
         self.button_frame.pack(fill=tk.X, pady=10)
         
         # Refresh button
-        self.refresh_btn = ttk.Button(self.button_frame, text="Refresh", command=self.refresh_all)
-        self.refresh_btn.pack(side=tk.RIGHT, padx=5)
+        # self.refresh_btn = ttk.Button(self.button_frame, text="Refresh", command=self.refresh_all)
+        # self.refresh_btn.pack(side=tk.RIGHT, padx=5)
         
         # Exit button
         self.exit_btn = ttk.Button(self.button_frame, text="Exit", command=self.exit_app)
@@ -314,7 +315,7 @@ class CameraMonitorApp:
             - A status label showing the current status of the camera.
         - Buttons for connecting and disconnecting all cameras.
         Attributes:
-            self.camera_labels (dict): A dictionary mapping each camera's serial number to its
+            self.camera_status_labels (dict): A dictionary mapping each camera's serial number to its
                                        corresponding labels for serial and status.
         Note:
             This method assumes that `self.status_frame` is a valid tkinter frame and that
@@ -331,7 +332,7 @@ class CameraMonitorApp:
         status_display_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
         # Create labels for each camera
-        self.camera_labels = {}
+        self.camera_status_labels = {}
         for i, serial in enumerate(self.camera_serials):
             frame = ttk.Frame(status_display_frame)
             frame.pack(fill=tk.X, pady=5)
@@ -348,7 +349,7 @@ class CameraMonitorApp:
 
             status_label.pack(side=tk.LEFT, padx=20)
             
-            self.camera_labels[serial] = {
+            self.camera_status_labels[serial] = {
                 "serial_label": serial_label,
                 "status_label": status_label
             }
@@ -370,10 +371,10 @@ class CameraMonitorApp:
         return False
 
     def connect_all_cameras(self):
-        """Connect to all cameras and update their status."""
+        """Connect to all cameras and update their status, serial number, camIndex, and info."""
         self.logger.info("Connecting to all cameras...")
         try:
-            num_cameras = self.__identify_cameras__()
+            num_cameras = self.__identify_cameras__() #This identifies the number of cameras connected.
             if num_cameras:
                 for i in range(num_cameras):
                     cam = AndoriXonCamera()
@@ -390,8 +391,8 @@ class CameraMonitorApp:
                                 self.cameras_dict.update( {cam.serialNumber: cam} )
 
 
-                                self.camera_labels[cam.serialNumber]["status_label"].config(text="Connected", foreground="green")
-                                self.camera_labels[cam.serialNumber]["serial_label"].config(fg="green")
+                                self.camera_status_labels[cam.serialNumber]["status_label"].config(text="Connected", foreground="green")
+                                self.camera_status_labels[cam.serialNumber]["serial_label"].config(fg="green")
                                 self.logger.info(f"Camera {cam.serialNumber} connected successfully.")
 
                                 self.logger.info(f"Successfully identified camera {cam.camIndex}")
@@ -399,8 +400,8 @@ class CameraMonitorApp:
                                 self.logger.info(f"     Model: {cam.head_model}")
                                 self.logger.info(f"     Controller Mode: {cam.controller_mode}")
                             except Exception as e:
-                                # self.camera_labels[cam.serialNumber]["status_label"].config(text="Error", fg="red")
-                                # self.camera_labels[cam.serialNumber]["serial_label"].config(fg="red")
+                                # self.camera_status_labels[cam.serialNumber]["status_label"].config(text="Error", fg="red")
+                                # self.camera_status_labels[cam.serialNumber]["serial_label"].config(fg="red")
                                 self.logger.error(f"Error connecting to camera at index {i}: {e}")
                                 cam.disconnect()
                         else:
@@ -410,39 +411,44 @@ class CameraMonitorApp:
             if self.logger.level == log.DEBUG:
                 print(f"Failed to connect cameras: {e}")
 
-
     def disconnect_all_cameras(self):
         """Disconnect all cameras and update their status."""
         self.logger.info("Disconnecting all cameras...")
-        for cam in self.cameras:
-            serial = cam.serialNumber
+        serials = list(self.cameras_dict.keys())
+        for serial in serials:
+            cam = self.cameras_dict.pop(serial)
             try:
                 if cam.disconnect():
-                    self.camera_labels[serial]["status_label"].config(text="Disconnected", foreground="black")
-                    self.camera_labels[serial]["serial_label"].config(fg="red")
+                    self.camera_status_labels[serial]["status_label"].config(text="Disconnected", foreground="black")
+                    self.camera_status_labels[serial]["serial_label"].config(fg="red")
                     self.logger.info(f"Camera {serial} disconnected.")
+                    # self.cameras_dict.pop(serial)
                 else:
-                    self.camera_labels[serial]["status_label"].config(text="Error", foreground="black")
-                    self.camera_labels[serial]["serial_label"].config(fg="red")
+                    self.camera_status_labels[serial]["status_label"].config(text="Error", foreground="black")
+                    self.camera_status_labels[serial]["serial_label"].config(fg="red")
             except Exception as e:
-                self.camera_labels[serial]["status_label"].config(text="Error", fg="red")
+                self.camera_status_labels[serial]["status_label"].config(text="Error", fg="red")
                 self.logger.error(f"Error disconnecting from camera {serial}: {e}")
 
-    def refresh_all(self):
-        """Refresh the status of all cameras."""
-        self.logger.info("Refreshing all camera statuses...")
-        for serial in self.camera_serials:
-            camera = self.cameras_dict[serial]
-            try:
-                if camera.connection_status():
-                    self.camera_labels[serial]["status_label"].config(text="Connected", fg="green")
-                    self.camera_labels[serial]["serial_label"].config(fg="green")
-                else:
-                    self.camera_labels[serial]["status_label"].config(text="Disconnected", fg="red")
-                    self.camera_labels[serial]["serial_label"].config(fg="red")
-            except Exception as e:
-                self.camera_labels[serial]["status_label"].config(text="Error", fg="red")
-                self.logger.error(f"Error refreshing status for camera {serial}: {e}")
+
+    # #TODO Need to investigate a different method for trying to confirm whether a camera is still connected. The current method doesnt seem to be working
+    # def refresh_all(self):
+    #     """Refresh the status of all cameras."""
+    #     self.logger.info("Refreshing all camera statuses...")
+    #     serials = list(self.cameras_dict.keys()) #we grab the serials from the dict because that dict contains all the cameras that are connected.
+    #     for serial in serials:
+    #         try:
+    #             cam = self.cameras_dict[serial]
+    #             if cam.connection_status():
+    #                 self.camera_status_labels[serial]["status_label"].config(text="Connected", fg="green")
+    #                 self.camera_status_labels[serial]["serial_label"].config(fg="green")
+    #             else:
+    #                 self.camera_status_labels[serial]["status_label"].config(text="Disconnected", fg="red")
+    #                 self.camera_status_labels[serial]["serial_label"].config(fg="red")
+    #         except Exception as e:
+    #             self.logger.error(f"Failed to refresh camera status for {serial}. Might be disconnected: {e}")
+    #             print(f"Failed to refresh camera status for {serial}. Might be disconnected.")
+
 
     def save_fits_header(self):
         """Save the content of the notes text area to a file."""
@@ -470,7 +476,7 @@ class CameraMonitorApp:
             self.logger.error(f"Error saving notes: {e}")
             messagebox.showerror("Error", f"Failed to save notes:\n{e}")
 
-    def load_notes(self):
+    def load_fits_header(self):
         """Load content into the notes text area from a file."""
         # Ask the user to select a file to open
         filepath = filedialog.askopenfilename(
@@ -732,7 +738,7 @@ class CameraMonitorApp:
         save_btn.pack(side=tk.LEFT, padx=5)
         
         load_btn = ttk.Button(button_frame, text="Load Header", 
-                            command=self.load_notes)
+                            command=self.load_fits_header)
         load_btn.pack(side=tk.LEFT, padx=5)
 
     def update_config_options(self, serialNumber = None):
@@ -952,7 +958,28 @@ class CameraMonitorApp:
         logger.info(f"Logging level set to {'DEBUG' if debugLogging else 'INFO'}")
         return logger
 
+    def check_camera_conection(self):
+        """
+        A method to periodically check the camera's connection.
+        """
+        print("Checking camera connection...")  # For demonstration
 
+        serials = list(self.cameras_dict.keys())  # we grab the serials from the dict because that dict contains all the cameras that are connected.
+        for serial in serials:
+            try:
+                cam = self.cameras_dict[serial]
+                if cam.connection_status():
+                    self.camera_status_labels[serial]["status_label"].config(text="Connected", fg="green")
+                    self.camera_status_labels[serial]["serial_label"].config(fg="green")
+                else:
+                    self.camera_status_labels[serial]["status_label"].config(text="Disconnected", fg="red")
+                    self.camera_status_labels[serial]["serial_label"].config(fg="red")
+            except Exception as e:
+                self.logger.error(f"Failed to refresh camera status for {serial}. Might be disconnected: {e}")
+                print(f"Failed to refresh camera status for {serial}. Might be disconnected.")
+
+        # Schedule the next check in 2 seconds (2000 ms)
+        self.root.after(ms=2000, func=self.check_camera_conection)
 
 def main():
     args = sys.argv #pass in command line arguments.

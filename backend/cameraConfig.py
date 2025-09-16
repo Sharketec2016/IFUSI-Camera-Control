@@ -45,13 +45,15 @@ class AndoriXonCamera():
 
     def connection_status(self):
         if self.cameraObj.is_opened():
-            self.is_connected = CameraState.CONNECTED
-            # print(f"Camera {self.cameraObj.get_device_info()} is connected")
-            return True
+            try:
+                info =  self.cameraObj.get_device_info()
+                self.is_connected = CameraState.CONNECTED
+                return True
+            except Exception as e:
+                self.is_connected = CameraState.DISCONNECTED
+                return False
         else:
             self.is_connected = CameraState.DISCONNECTED
-            # print(f"Camera {self.serialNumber} is not connected")
-            
         return False
 
     def acquisition_status(self):
