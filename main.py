@@ -190,7 +190,7 @@ class CameraMonitorApp:
 
 
         self.create_ui()
-        self.check_camera_conection()
+        # self.check_camera_conection()
 
 
     def __identify_cameras__(self):
@@ -240,8 +240,8 @@ class CameraMonitorApp:
         self.notebook.add(self.notes_frame, text="FITS Header")
 
         # # Create camera preview tab: TODO may add this back later as a sanity check when using the cameras right before a run.
-        # self.preview_frame = ttk.Frame(self.notebook)
-        # self.notebook.add(self.preview_frame, text="Camera Preview")
+        self.preview_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.preview_frame, text="Camera Preview")
 
         # Setup the camera status display
         self.setup_status_display()
@@ -252,7 +252,7 @@ class CameraMonitorApp:
         self.setup_notes_display()
 
         # # Setup the camera preview options
-        # self.setup_preview_options()
+        self.setup_preview_options()
         
         # Button frame at the bottom
         self.button_frame = ttk.Frame(self.main_frame)
@@ -400,8 +400,6 @@ class CameraMonitorApp:
                                 self.logger.info(f"     Model: {cam.head_model}")
                                 self.logger.info(f"     Controller Mode: {cam.controller_mode}")
                             except Exception as e:
-                                # self.camera_status_labels[cam.serialNumber]["status_label"].config(text="Error", fg="red")
-                                # self.camera_status_labels[cam.serialNumber]["serial_label"].config(fg="red")
                                 self.logger.error(f"Error connecting to camera at index {i}: {e}")
                                 cam.disconnect()
                         else:
@@ -824,12 +822,16 @@ class CameraMonitorApp:
         """Capture an image from the selected camera"""
         serial = self.preview_camera.get()
 
-        success = self.camera_drivers.capture_image(serial)
+        cam = self.cameras_dict[serial]
+        image = cam.capture_image()
+        print("Image size:", image.shape)
+        self.notes_text.delete(1.0, tk.END)
+        # success = self.camera_drivers.capture_image(serial)
 
-        if success:
-            messagebox.showinfo("Capture", f"Image captured from camera {serial}")
-        else:
-            messagebox.showerror("Error", f"Failed to capture image from camera {serial}")
+        # if success:
+        #     messagebox.showinfo("Capture", f"Image captured from camera {serial}")
+        # else:
+        #     messagebox.showerror("Error", f"Failed to capture image from camera {serial}")
 
     def exit_app(self):
         """Clean exit of the application"""

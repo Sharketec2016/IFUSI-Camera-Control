@@ -131,7 +131,7 @@ class AndoriXonCamera():
                                             )
                         self.cameraObj.set_vsspeed(configDict['verticalShift']['shiftSpeed'])
                         self.cameraObj.set_temperature(configDict['temperatureSetpoint'])
-                        # self.acquistion_configuration(cameraDict)
+                        self.acquistion_configuration(self.cam_config)
                         self.is_configured = CameraState.CONFIGURED
                         self.logger.info(f"Camera {self.serialNumber} configured successfully")
                         return True
@@ -142,8 +142,7 @@ class AndoriXonCamera():
         return True
     
     def acquistion_configuration(self, cameraDict):
-        # cameraObj, acqDict = cameraDict['Camera'], cameraDict['AcqConfiguration']
-        acqDict = cameraDict['AcqConfiguration']
+        acqDict = cameraDict['acqconfiguration']
         self.cameraObj.setup_acquisition(acqDict['acqMode'], acqDict['nframes'])
         self.cameraObj.set_overflow_behavior(behavior=acqDict['overflowBehavior'])
     
@@ -196,5 +195,7 @@ class AndoriXonCamera():
             logger.addHandler(handler)
         return logger
         
+    # def capture_still(self):
+
 
 
