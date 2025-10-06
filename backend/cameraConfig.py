@@ -91,7 +91,7 @@ class AndoriXonCamera():
             'acquisitionMode': "kinetic",
             'triggeringMode': 'int',
             'readoutMode': 'image',
-            'exposureTime': 0.04,
+            'exposureTime': 0.004,
             'acquisitionNumber': 1,
             'frameTransfer': True,
             'verticalShift': {'shiftSpeed': 0.6, 'clockVoltageAmplitude': None},
