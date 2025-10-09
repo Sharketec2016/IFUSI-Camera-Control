@@ -69,6 +69,8 @@ class AndorViewerApp:
             return
         if self.running:
             return
+        self.cam.setup_acquisition(mode="sequence")
+        self.cam.start_acquisition()
         self.running = True
         self.thread = threading.Thread(target=self.live_loop, daemon=True)
         self.thread.start()
@@ -76,26 +78,32 @@ class AndorViewerApp:
     def stop_live(self):
         self.running = False
 
+
     def live_loop(self):
         try:
-            self.cam.start_acquisition()
             while self.running:
                 self.cam.wait_for_frame(timeout=5)
-                frame = self.cam.read_oldest_image()
-                if frame is not None:
+                frame = self.cam.read_newest_image()  # ← Solis-style “latest only”
+                if frame is None:
                     continue
-                # Normalize and convert for display
-                norm = (255 * (frame - np.min(frame)) / (np.ptp(frame) + 1e-9)).astype(np.uint8)
+
+                # Fixed contrast normalization
+                if not hasattr(self, "vmin"):
+                    self.vmin, self.vmax = np.min(frame), np.max(frame)
+                frame = np.clip(frame, self.vmin, self.vmax)
+                norm = (255 * (frame - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
+
+                # Display on Tkinter label
                 img = Image.fromarray(norm)
                 imgtk = ImageTk.PhotoImage(image=img)
-                self.image_label.imgtk = imgtk
-                self.image_label.configure(image=imgtk)
-                time.sleep(0.05)
+                self.image_label.after(0, self.update_display, imgtk)
+
+        finally:
             self.cam.stop_acquisition()
-        except Exception as e:
-            traceback.print_exc()
-            messagebox.showerror("Error", f"Live loop failed: {e}")
-            self.running = False
+
+    def update_display(self, imgtk):
+        self.image_label.imgtk = imgtk
+        self.image_label.configure(image=imgtk)
 
     # ---------------------------
     def on_close(self):
