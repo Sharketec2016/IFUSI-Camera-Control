@@ -499,3 +499,48 @@
 [2025-09-22 17:03:58] CameraApplication:INFO:     Controller Mode: USB
 [2025-09-22 17:04:28] CameraApplication:INFO:Disconnecting all cameras...
 [2025-09-22 17:04:29] CameraApplication:INFO:Camera 12574 disconnected.
+[2025-10-06 17:21:49] CameraApplication:INFO:Logging level set to INFO
+[2025-10-06 17:21:49] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-06 17:21:49] CameraApplication:INFO:Creating UI
+[2025-10-06 17:21:49] CameraApplication:INFO:Setting up camera status display
+[2025-10-06 17:27:11] CameraApplication:INFO:Connecting to all cameras...
+[2025-10-06 17:27:11] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-06 17:27:14] CameraApplication:INFO:Camera 13703 connected successfully.
+[2025-10-06 17:27:14] CameraApplication:INFO:Successfully identified camera 0
+[2025-10-06 17:27:14] CameraApplication:INFO:     Serial number: 13703
+[2025-10-06 17:27:14] CameraApplication:INFO:     Model: DU888_EXF
+[2025-10-06 17:27:14] CameraApplication:INFO:     Controller Mode: USB
+[2025-10-06 17:27:22] CameraApplication:INFO:Disconnecting all cameras...
+[2025-10-06 17:27:23] CameraApplication:INFO:Camera 13703 disconnected.
+[2025-10-06 17:29:27] CameraApplication:INFO:Logging level set to INFO
+[2025-10-06 17:29:27] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-06 17:29:27] CameraApplication:INFO:Creating UI
+[2025-10-06 17:29:27] CameraApplication:INFO:Setting up camera status display
+[2025-10-06 17:29:29] CameraApplication:INFO:Connecting to all cameras...
+[2025-10-06 17:29:29] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-06 17:29:33] CameraApplication:INFO:Camera 13703 connected successfully.
+[2025-10-06 17:29:33] CameraApplication:INFO:Successfully identified camera 0
+[2025-10-06 17:29:33] CameraApplication:INFO:     Serial number: 13703
+[2025-10-06 17:29:33] CameraApplication:INFO:     Model: DU888_EXF
+[2025-10-06 17:29:33] CameraApplication:INFO:     Controller Mode: USB
+[2025-10-06 17:30:15] CameraApplication:INFO:Disconnecting all cameras...
+[2025-10-06 17:30:16] CameraApplication:INFO:Camera 13703 disconnected.
+[2025-10-06 17:35:04] CameraApplication:INFO:Logging level set to INFO
+[2025-10-06 17:35:04] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-06 17:35:04] CameraApplication:INFO:Creating UI
+[2025-10-06 17:35:04] CameraApplication:INFO:Setting up camera status display
+[2025-10-06 17:35:06] CameraApplication:INFO:Connecting to all cameras...
+[2025-10-06 17:35:06] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-06 17:35:09] CameraApplication:INFO:Camera 13703 connected successfully.
+[2025-10-06 17:35:09] CameraApplication:INFO:Successfully identified camera 0
+[2025-10-06 17:35:09] CameraApplication:INFO:     Serial number: 13703
+[2025-10-06 17:35:09] CameraApplication:INFO:     Model: DU888_EXF
+[2025-10-06 17:35:09] CameraApplication:INFO:     Controller Mode: USB
+[2025-10-06 17:46:35] CameraApplication:INFO:Logging level set to INFO
+[2025-10-06 17:46:35] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-06 17:46:35] CameraApplication:INFO:Creating UI
+[2025-10-06 17:46:35] CameraApplication:INFO:Setting up camera status display
+[2025-10-06 17:47:48] CameraApplication:INFO:Logging level set to INFO
+[2025-10-06 17:47:48] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-06 17:47:48] CameraApplication:INFO:Creating UI
+[2025-10-06 17:47:48] CameraApplication:INFO:Setting up camera status display

@@ -11,6 +11,7 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter.font import Font
 from tkinter import ttk, messagebox
+from PIL import ImageTk, Image
 from tkinter.messagebox import showinfo
 import threading
 import time
@@ -659,50 +660,93 @@ class CameraMonitorApp:
                 if key in self.config_labels_dict:
                     self.config_labels_dict[key].config(text=str(value))
             
+    # def setup_preview_options(self):
+    #     """Setup the camera preview options"""
+    #     # Title label
+    #     preview_title = ttk.Label(self.preview_frame, text="Camera Preview", font=("Arial", 14, "bold"))
+    #     preview_title.pack(pady=10)
+    #
+    #     # Camera selection frame
+    #     preview_selection_frame = ttk.Frame(self.preview_frame)
+    #     preview_selection_frame.pack(fill=tk.X, padx=20, pady=10)
+    #
+    #     ttk.Label(preview_selection_frame, text="Select Camera:").pack(side=tk.LEFT, padx=5)
+    #
+    #     # Camera selection combobox
+    #     self.preview_camera = tk.StringVar()
+    #     preview_select = ttk.Combobox(preview_selection_frame, textvariable=self.preview_camera)
+    #     preview_select['values'] = self.camera_serials
+    #     preview_select.current(0)
+    #     preview_select.pack(side=tk.LEFT, padx=5)
+    #
+    #     # Preview frame
+    #     preview_display_frame = ttk.LabelFrame(self.preview_frame, text="Live Preview")
+    #     preview_display_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+    #
+    #     # Placeholder for camera preview (you would replace this with actual preview)
+    #     # self.preview_placeholder = tk.Label(preview_display_frame, text="No Preview Available",
+    #     #                                   bg="black", fg="white", height=20)
+    #     # self.preview_placeholder.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
+    #     self.preview_canvas = tk.Label(preview_display_frame, bg="black")
+    #     self.preview_canvas.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
+    #
+    #     # Preview control buttons
+    #     preview_control_frame = ttk.Frame(self.preview_frame)
+    #     preview_control_frame.pack(fill=tk.X, pady=10, padx=20)
+    #
+    #     start_preview_btn = ttk.Button(preview_control_frame, text="Start Preview",
+    #                                  command=lambda: self.toggle_preview(True))
+    #     start_preview_btn.pack(side=tk.LEFT, padx=5)
+    #
+    #     stop_preview_btn = ttk.Button(preview_control_frame, text="Stop Preview",
+    #                                 command=lambda: self.toggle_preview(False))
+    #     stop_preview_btn.pack(side=tk.LEFT, padx=5)
+    #
+    #     capture_btn = ttk.Button(preview_control_frame, text="Capture Image",
+    #                            command=self.capture_image)
+    #     capture_btn.pack(side=tk.LEFT, padx=5)
     def setup_preview_options(self):
-        """Setup the camera preview options"""
+        """Setup the camera preview options with live streaming inside the preview_frame"""
         # Title label
         preview_title = ttk.Label(self.preview_frame, text="Camera Preview", font=("Arial", 14, "bold"))
         preview_title.pack(pady=10)
-        
+
         # Camera selection frame
         preview_selection_frame = ttk.Frame(self.preview_frame)
         preview_selection_frame.pack(fill=tk.X, padx=20, pady=10)
-        
+
         ttk.Label(preview_selection_frame, text="Select Camera:").pack(side=tk.LEFT, padx=5)
-        
+
         # Camera selection combobox
         self.preview_camera = tk.StringVar()
-        preview_select = ttk.Combobox(preview_selection_frame, textvariable=self.preview_camera)
+        preview_select = ttk.Combobox(preview_selection_frame, textvariable=self.preview_camera, state="readonly")
         preview_select['values'] = self.camera_serials
         preview_select.current(0)
         preview_select.pack(side=tk.LEFT, padx=5)
-        
-        # Preview frame
+
+        # Preview display frame
         preview_display_frame = ttk.LabelFrame(self.preview_frame, text="Live Preview")
         preview_display_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
-        # Placeholder for camera preview (you would replace this with actual preview)
-        self.preview_placeholder = tk.Label(preview_display_frame, text="No Preview Available", 
-                                          bg="black", fg="white", height=20)
-        self.preview_placeholder.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
-        
+
+        # This label will show the live video frames
+        self.preview_canvas = tk.Label(preview_display_frame, bg="black")
+        self.preview_canvas.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
+
         # Preview control buttons
         preview_control_frame = ttk.Frame(self.preview_frame)
         preview_control_frame.pack(fill=tk.X, pady=10, padx=20)
-        
-        start_preview_btn = ttk.Button(preview_control_frame, text="Start Preview", 
-                                     command=lambda: self.toggle_preview(True))
+
+        start_preview_btn = ttk.Button(preview_control_frame, text="Start Preview",
+                                       command=lambda: self.toggle_preview(True))
         start_preview_btn.pack(side=tk.LEFT, padx=5)
-        
-        stop_preview_btn = ttk.Button(preview_control_frame, text="Stop Preview", 
-                                    command=lambda: self.toggle_preview(False))
+
+        stop_preview_btn = ttk.Button(preview_control_frame, text="Stop Preview",
+                                      command=lambda: self.toggle_preview(False))
         stop_preview_btn.pack(side=tk.LEFT, padx=5)
-        
-        capture_btn = ttk.Button(preview_control_frame, text="Capture Image", 
-                               command=self.capture_image)
+
+        capture_btn = ttk.Button(preview_control_frame, text="Capture Image", command=self.capture_image)
         capture_btn.pack(side=tk.LEFT, padx=5)
-    
+
     def setup_notes_display(self):
         """Setup the experiment notes interface"""
         # Title label
@@ -808,15 +852,66 @@ class CameraMonitorApp:
         pprint(tmpReplaceDict)
 
     def toggle_preview(self, start):
-        """Toggle camera preview on/off"""
+        """Start or stop the live preview."""
         serial = self.preview_camera.get()
 
-        if start:
-            self.preview_placeholder.config(text=f"Starting preview for camera {serial}...")
-            # Here you would implement the actual preview functionality
-        else:
-            self.preview_placeholder.config(text="Preview stopped")
-            # Here you would stop the preview
+        if start and not getattr(self, "preview_running", False):
+            self.preview_running = True
+            self.preview_canvas.config(text=f"Starting preview for camera {serial}...", image="")
+            self.start_camera_preview(serial)
+
+        elif not start and getattr(self, "preview_running", False):
+            self.preview_running = False
+            self.preview_canvas.config(text="Preview stopped", image="")
+            if hasattr(self, "preview_cam"):
+                try:
+                    self.preview_cam.stop_acquisition()
+                except Exception:
+                    pass
+                try:
+                    self.preview_cam.close()
+                except Exception:
+                    pass
+                del self.preview_cam
+
+    def start_camera_preview(self, serial):
+        """Start live camera preview loop"""
+        try:
+            self.preview_cam = self.cameras_dict[serial].cameraObj
+            self.preview_cam.set_exposure(0.04)
+            self.preview_cam.setup_acquisition(mode="sequence", nframes=100)
+            self.preview_cam.start_acquisition()
+        except Exception as e:
+            self.preview_canvas.config(text=f"Failed to start camera: {e}")
+            self.preview_running = False
+            return
+
+        self.update_preview_frame()
+
+    def update_preview_frame(self):
+        """Fetch latest frame and display it, reschedule next update."""
+        if not getattr(self, "preview_running", False):
+            return  # stop updating if preview stopped
+
+        try:
+            self.preview_cam.wait_for_frame(timeout=100)
+            frame = self.preview_cam.read_oldest_image()
+            if frame is not None:
+                img = self.array_to_photoimage(frame)
+                self.preview_canvas.config(image=img, text="")
+                self.preview_canvas.image = img  # keep reference to prevent GC
+        except Exception as e:
+            self.preview_canvas.config(text=f"Error reading frame: {e}", image="")
+
+        # Schedule next frame update approx every 30 ms (~33 FPS)
+        self.root.after(30, self.update_preview_frame)
+
+    def array_to_photoimage(self, array):
+        """Convert a grayscale numpy array to a Tkinter-compatible PhotoImage"""
+        array = np.clip(array, 0, None)  # remove negatives
+        norm = 255 * (array - np.min(array)) / (np.ptp(array) + 1e-5)
+        img = Image.fromarray(norm.astype(np.uint8), mode="L")
+        return ImageTk.PhotoImage(img)
 
     def capture_image(self):
         """Capture an image from the selected camera"""

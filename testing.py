@@ -1,73 +1,95 @@
+import traceback
+
 from pylablib.devices import Andor
-import time
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Qt5Agg')
+import time
+
 def live_camera_display(exposure=0.040, roi=None):
     """
-    Continuously grab images from the camera and display them in real time.
-
-    :param exposure: Exposure time in seconds (e.g. 0.040 for 40 ms)
-    :param roi: Optional ROI spec (e.g. (xmin, xmax, ymin, ymax) or as required by your camera API)
+    Continuously grab images from the Andor iXon camera and display them in real time.
     """
-    # Instantiate your camera (replace with your camera class)
-    cam = Andor.AndorSDK2Camera(idx=0)
-    cam.open()
+    # Connect to camera
+    cam = Andor.AndorSDK2Camera()
+
     try:
-        # Optionally set ROI if your camera supports it
-        if roi is not None:
-            # You may need to adapt this call depending on your camera API
-            cam.set_roi(*roi)
+        # Configure camera
 
-        # Set exposure
         cam.set_exposure(exposure)
+        cam.set_trigger_mode("int")
+        val = cam.get_all_amp_modes()
 
-        # Optionally setup acquisition buffer etc.
-        cam.setup_acquisition(mode="sequence", nframes=100)  # buffer of 100 frames
+
+        cam.set_amp_mode(
+            channel=0,
+            oamp=0,
+            hsspeed=1,
+            preamp=1
+        )
+
+
+        cam.setup_shutter(mode="open")
+
+        # Setup for continuous acquisition
+        cam.setup_acquisition(mode="sequence")
         cam.start_acquisition()
+        acquisition_started = True
+        print(f"Started acquisition with exposure = {exposure*1000:.1f} ms")
 
-        # Prepare matplotlib figure
+        # Grab first frame for initialization
+        cam.wait_for_frame(timeout=5)
+        frame = cam.read_oldest_image()
+        if frame is None:
+            raise RuntimeError("No initial frame received")
+
+
         fig, ax = plt.subplots()
-        # Acquire one initial frame to define the plot
-        cam.wait_for_frame()
-        frame0 = cam.read_oldest_image()
-        im = ax.imshow(frame0, cmap='gray', vmin=np.min(frame0), vmax=np.max(frame0))
+        im = ax.imshow(frame, cmap='gray', vmin=np.min(frame), vmax=np.max(frame))
         ax.set_title(f"Live camera (exposure = {exposure*1000:.1f} ms)")
         ax.axis('off')
         plt.colorbar(im, ax=ax)
+        plt.show(block=False)
+        plt.pause(0.1)
 
-        # Continuous loop
-        while True:
-            # Wait for the next frame
-            cam.wait_for_frame()
-            frame = cam.read_oldest_image()
-            if frame is None:
-                # If no frame, skip
+        while plt.fignum_exists(fig.number):
+            try:
+                # Wait for the next available frame
+                cam.wait_for_frame(timeout=5)
+                frame = cam.read_oldest_image()
+                if frame is None:
+                    continue
+
+                im.set_data(frame)
+                im.set_clim(vmin=np.min(frame), vmax=np.max(frame))
+                plt.pause(0.001)
+            except Exception as e:
+                print("Error during frame acquistion")
+                traceback.print_exc()
+                time.sleep(0.1)
                 continue
 
-            # Update the image display
-            im.set_data(frame)
-            # Optionally adjust contrast scaling if dynamic range changes
-            im.set_clim(vmin=np.min(frame), vmax=np.max(frame))
-            plt.pause(0.001)  # small pause to allow GUI event loop to update
-
-            # If you want a breaking condition, you could check keyboard or time
-            # Here’s an example to break on close of window:
-            if not plt.fignum_exists(fig.number):
-                break
     except KeyboardInterrupt:
-        print('Closing camera')
+        print("🔹 Interrupted by user.")
+    except Exception as e:
+        print("❌ Unexpected error:", e)
+        traceback.print_exc()
     finally:
-        # Clean up
-        try:
-            cam.stop_acquisition()
-        except Exception:
-            pass
-        cam.close()
-        plt.close(fig)
-
+        print("Stopping acquisition and closing camera.")
+        if cam is not None:
+            try:
+                if acquisition_started:
+                    cam.stop_acquisition()
+                    print("Acquisition stopped")
+            except Exception as e:
+                print("Warning while stopping acquisition:", e)
+            try:
+                cam.close()
+                print("Camera closed successfully")
+            except Exception as e:
+                print("Error while closing camera:", e)
+        plt.close('all')
 
 if __name__ == '__main__':
-    # Example usage: run live display with 40 ms exposure
-    live_camera_display(exposure=0.040, roi=None)
+    live_camera_display(exposure=0.040)
