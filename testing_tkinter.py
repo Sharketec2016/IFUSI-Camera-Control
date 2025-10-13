@@ -39,14 +39,14 @@ class AndorViewerApp:
         try:
             idx = int(self.cam_index.get())
             self.cam = Andor.AndorSDK2Camera(idx=idx)
-            self.cam.set_exposure(0.04)
+            self.cam.set_exposure(0.1)
             self.cam.setup_shutter(mode="open")
             self.cam.set_trigger_mode("int")
             self.cam.set_amp_mode(
                 channel=0,
                 oamp=0,
                 hsspeed=1,
-                preamp=1
+                preamp=2
             )
 
             self.cam.setup_acquisition(mode="sequence")
@@ -88,8 +88,13 @@ class AndorViewerApp:
                     continue
 
                 # Fixed contrast normalization
+                # Smooth rolling brightness range to avoid flicker
                 if not hasattr(self, "vmin"):
                     self.vmin, self.vmax = np.min(frame), np.max(frame)
+                else:
+                    self.vmin = 0.9 * self.vmin + 0.1 * np.min(frame)
+                    self.vmax = 0.9 * self.vmax + 0.1 * np.max(frame)
+
                 frame = np.clip(frame, self.vmin, self.vmax)
                 norm = (255 * (frame - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
 
