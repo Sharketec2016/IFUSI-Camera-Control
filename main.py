@@ -866,16 +866,7 @@ class CameraMonitorApp:
         elif not start and getattr(self, "preview_running", False):
             self.preview_running = False
             self.preview_canvas.config(text="Preview stopped", image="")
-            if hasattr(self, "preview_cam"):
-                try:
-                    self.preview_cam.stop_acquisition()
-                except Exception:
-                    pass
-                try:
-                    self.preview_cam.close()
-                except Exception:
-                    pass
-                del self.preview_cam
+
 
     def start_camera_preview(self, serial):
         """Start live camera preview loop"""
@@ -931,6 +922,18 @@ class CameraMonitorApp:
                 self.preview_canvas.after(0, self.update_preview_display, imgtk)
         finally:
             self.preview_cam.stop_acquisition()
+            try:
+                # Create an empty black image matching the preview area
+                blank = np.zeros((self.preview_height, self.preview_width), dtype=np.uint8)
+                img = Image.fromarray(blank)
+                imgtk = ImageTk.PhotoImage(image=img)
+
+                # Update the label
+                self.preview_canvas.imgtk = imgtk
+                self.preview_canvas.configure(image=imgtk)
+            except Exception as e:
+                print(f"Failed to draw preview: {e}")
+
 
     def update_preview_display(self, imgtk):
         self.preview_canvas.imgtk = imgtk

@@ -731,3 +731,54 @@
 [2025-10-13 17:20:49] CameraApplication:INFO:     Controller Mode: USB
 [2025-10-13 17:21:16] CameraApplication:INFO:Disconnecting all cameras...
 [2025-10-13 17:21:17] CameraApplication:INFO:Camera 12606 disconnected.
+[2025-10-13 17:22:31] CameraApplication:INFO:Logging level set to DEBUG
+[2025-10-13 17:22:31] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-13 17:22:31] CameraApplication:INFO:Creating UI
+[2025-10-13 17:22:31] CameraApplication:INFO:Setting up camera status display
+[2025-10-13 17:22:32] CameraApplication:INFO:Connecting to all cameras...
+[2025-10-13 17:22:32] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-13 17:22:36] CameraApplication:INFO:Camera 12606 connected successfully.
+[2025-10-13 17:22:36] CameraApplication:INFO:Successfully identified camera 0
+[2025-10-13 17:22:36] CameraApplication:INFO:     Serial number: 12606
+[2025-10-13 17:22:36] CameraApplication:INFO:     Model: DU888_BVF
+[2025-10-13 17:22:36] CameraApplication:INFO:     Controller Mode: USB
+[2025-10-13 17:23:36] CameraApplication:INFO:Disconnecting all cameras...
+[2025-10-13 17:23:36] CameraApplication:INFO:Connecting to all cameras...
+[2025-10-13 17:23:36] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-13 17:23:40] CameraApplication:INFO:Camera 12606 connected successfully.
+[2025-10-13 17:23:40] CameraApplication:INFO:Successfully identified camera 0
+[2025-10-13 17:23:40] CameraApplication:INFO:     Serial number: 12606
+[2025-10-13 17:23:40] CameraApplication:INFO:     Model: DU888_BVF
+[2025-10-13 17:23:40] CameraApplication:INFO:     Controller Mode: USB
+[2025-10-13 17:23:41] CameraApplication:INFO:Disconnecting all cameras...
+[2025-10-13 17:23:42] CameraApplication:INFO:Camera 12606 disconnected.
+[2025-10-13 17:25:34] CameraApplication:INFO:Logging level set to DEBUG
+[2025-10-13 17:25:34] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-13 17:25:34] CameraApplication:INFO:Creating UI
+[2025-10-13 17:25:34] CameraApplication:INFO:Setting up camera status display
+[2025-10-13 17:25:35] CameraApplication:INFO:Connecting to all cameras...
+[2025-10-13 17:25:35] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-13 17:25:39] CameraApplication:INFO:Camera 12606 connected successfully.
+[2025-10-13 17:25:39] CameraApplication:INFO:Successfully identified camera 0
+[2025-10-13 17:25:39] CameraApplication:INFO:     Serial number: 12606
+[2025-10-13 17:25:39] CameraApplication:INFO:     Model: DU888_BVF
+[2025-10-13 17:25:39] CameraApplication:INFO:     Controller Mode: USB
+[2025-10-13 17:26:01] CameraApplication:INFO:Disconnecting all cameras...
+[2025-10-13 17:26:02] CameraApplication:INFO:Camera 12606 disconnected.
+[2025-10-13 17:26:20] CameraApplication:INFO:Logging level set to DEBUG
+[2025-10-13 17:26:20] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-13 17:26:20] CameraApplication:INFO:Creating UI
+[2025-10-13 17:26:20] CameraApplication:INFO:Setting up camera status display
+[2025-10-13 17:28:18] CameraApplication:INFO:Logging level set to DEBUG
+[2025-10-13 17:28:18] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-13 17:28:18] CameraApplication:INFO:Creating UI
+[2025-10-13 17:28:18] CameraApplication:INFO:Setting up camera status display
+[2025-10-13 17:28:22] CameraApplication:INFO:Connecting to all cameras...
+[2025-10-13 17:28:22] CameraApplication:INFO:Number of cameras detected: 1
+[2025-10-13 17:28:25] CameraApplication:INFO:Camera 12606 connected successfully.
+[2025-10-13 17:28:25] CameraApplication:INFO:Successfully identified camera 0
+[2025-10-13 17:28:25] CameraApplication:INFO:     Serial number: 12606
+[2025-10-13 17:28:25] CameraApplication:INFO:     Model: DU888_BVF
+[2025-10-13 17:28:25] CameraApplication:INFO:     Controller Mode: USB
+[2025-10-13 17:28:41] CameraApplication:INFO:Disconnecting all cameras...
+[2025-10-13 17:28:42] CameraApplication:INFO:Camera 12606 disconnected.
