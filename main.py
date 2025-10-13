@@ -371,6 +371,28 @@ class CameraMonitorApp:
                 return True
         return False
 
+    def update_UI_elements(self):
+        """
+        This function updated the necessary UI elements with the appropriate values for connected cameras.
+        This should only really be called after a connect all, or disconnect all.
+        :return:
+        """
+        try:
+            camera_list = list(self.cameras_dict.keys())
+            if hasattr(self, "preview_select"):
+                self.preview_select['values'] = camera_list
+
+                if camera_list:
+                    self.preview_select.current(0)
+                else:
+                    self.preview_camera.set("")
+        except Exception as e:
+            self.logger.error(f"Error updating UI: {e}")
+
+    def schedule_ui_refresh(self):
+        self.update_UI_elements()
+        self.root.after(2000, self.schedule_ui_refresh)  # every 2 seconds
+
     def connect_all_cameras(self):
         """Connect to all cameras and update their status, serial number, camIndex, and info."""
         self.logger.info("Connecting to all cameras...")
@@ -405,6 +427,7 @@ class CameraMonitorApp:
                                 cam.disconnect()
                         else:
                             self.logger.error(f"Failed to connect to camera {cam.serialNumber}.")
+                self.update_UI_elements()
         except Exception as e:
             self.logger.error(f"Failed within connecting to all cameras {e}")
             if self.logger.level == log.DEBUG:
@@ -428,7 +451,7 @@ class CameraMonitorApp:
             except Exception as e:
                 self.camera_status_labels[serial]["status_label"].config(text="Error", fg="red")
                 self.logger.error(f"Error disconnecting from camera {serial}: {e}")
-
+        self.update_UI_elements()
 
     # #TODO Need to investigate a different method for trying to confirm whether a camera is still connected. The current method doesnt seem to be working
     # def refresh_all(self):
@@ -659,52 +682,7 @@ class CameraMonitorApp:
                     self.config_vars[key].set(value)
                 if key in self.config_labels_dict:
                     self.config_labels_dict[key].config(text=str(value))
-            
-    # def setup_preview_options(self):
-    #     """Setup the camera preview options"""
-    #     # Title label
-    #     preview_title = ttk.Label(self.preview_frame, text="Camera Preview", font=("Arial", 14, "bold"))
-    #     preview_title.pack(pady=10)
-    #
-    #     # Camera selection frame
-    #     preview_selection_frame = ttk.Frame(self.preview_frame)
-    #     preview_selection_frame.pack(fill=tk.X, padx=20, pady=10)
-    #
-    #     ttk.Label(preview_selection_frame, text="Select Camera:").pack(side=tk.LEFT, padx=5)
-    #
-    #     # Camera selection combobox
-    #     self.preview_camera = tk.StringVar()
-    #     preview_select = ttk.Combobox(preview_selection_frame, textvariable=self.preview_camera)
-    #     preview_select['values'] = self.camera_serials
-    #     preview_select.current(0)
-    #     preview_select.pack(side=tk.LEFT, padx=5)
-    #
-    #     # Preview frame
-    #     preview_display_frame = ttk.LabelFrame(self.preview_frame, text="Live Preview")
-    #     preview_display_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-    #
-    #     # Placeholder for camera preview (you would replace this with actual preview)
-    #     # self.preview_placeholder = tk.Label(preview_display_frame, text="No Preview Available",
-    #     #                                   bg="black", fg="white", height=20)
-    #     # self.preview_placeholder.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
-    #     self.preview_canvas = tk.Label(preview_display_frame, bg="black")
-    #     self.preview_canvas.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
-    #
-    #     # Preview control buttons
-    #     preview_control_frame = ttk.Frame(self.preview_frame)
-    #     preview_control_frame.pack(fill=tk.X, pady=10, padx=20)
-    #
-    #     start_preview_btn = ttk.Button(preview_control_frame, text="Start Preview",
-    #                                  command=lambda: self.toggle_preview(True))
-    #     start_preview_btn.pack(side=tk.LEFT, padx=5)
-    #
-    #     stop_preview_btn = ttk.Button(preview_control_frame, text="Stop Preview",
-    #                                 command=lambda: self.toggle_preview(False))
-    #     stop_preview_btn.pack(side=tk.LEFT, padx=5)
-    #
-    #     capture_btn = ttk.Button(preview_control_frame, text="Capture Image",
-    #                            command=self.capture_image)
-    #     capture_btn.pack(side=tk.LEFT, padx=5)
+
     def setup_preview_options(self):
         """Setup the camera preview options with live streaming inside the preview_frame"""
         # Title label
@@ -719,10 +697,14 @@ class CameraMonitorApp:
 
         # Camera selection combobox
         self.preview_camera = tk.StringVar()
-        preview_select = ttk.Combobox(preview_selection_frame, textvariable=self.preview_camera, state="readonly")
-        preview_select['values'] = self.camera_serials
-        preview_select.current(0)
-        preview_select.pack(side=tk.LEFT, padx=5)
+        self.preview_select = ttk.Combobox(preview_selection_frame, textvariable=self.preview_camera, state="readonly")
+
+        if len(self.cameras_dict) > 0:
+            self.preview_select['values'] = list(self.cameras_dict.keys())
+            self.preview_select.current(0)
+        else:
+            self.preview_select['values'] = []
+        self.preview_select.pack(side=tk.LEFT, padx=5)
 
         # Preview display frame
         preview_display_frame = ttk.LabelFrame(self.preview_frame, text="Live Preview")
