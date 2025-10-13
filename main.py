@@ -861,10 +861,12 @@ class CameraMonitorApp:
         if start and not getattr(self, "preview_running", False):
             self.preview_running = True
             self.preview_canvas.config(text=f"Starting preview for camera {serial}...", image="")
+            self.preview_select.configure(state="disabled")
             self.start_camera_preview(serial)
 
         elif not start and getattr(self, "preview_running", False):
             self.preview_running = False
+            self.preview_select.configure(state="readonly")
             self.preview_canvas.config(text="Preview stopped", image="")
 
 
@@ -977,6 +979,14 @@ class CameraMonitorApp:
 
     def exit_app(self):
         """Clean exit of the application"""
+        try:
+            self.disconnect_all_cameras()
+        except Exception as e:
+            self.logger.critical(f"ERROR: Failed to disconnect all cameras: {e}")
+
+
+
+
         self.monitoring = False
         try:
             if self.monitor_thread.is_alive():
