@@ -11,7 +11,7 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter.font import Font
 from tkinter import ttk, messagebox
-from PIL import ImageTk, Image
+from PIL import ImageTk, Image, ImageOps
 from tkinter.messagebox import showinfo
 import threading
 import time
@@ -143,8 +143,6 @@ class CameraMonitorApp:
         self.camera_serials = ["13703", "12606", "12574"]
 
 
-      
-        
         # Creating UI elements
         self.monitoring = True
         self.monitor_thread = None
@@ -217,60 +215,56 @@ class CameraMonitorApp:
             worker = CameraWorker(camera, queue)
             self.camera_queues[camera.serialNumber] = queue
             self.camera_workers[camera.serialNumber] = worker
-            
+
     def create_ui(self):
         """Create the main UI elements"""
         self.logger.info("Creating UI")
-        # Create the main frame
+
+        # Create the main frame (root container)
         self.main_frame = ttk.Frame(self.root, padding="10")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
+        # Use grid for clean vertical layout control
+        self.main_frame.rowconfigure(0, weight=1)  # Notebook expands
+        self.main_frame.rowconfigure(1, weight=0)  # Buttons stay fixed
+        self.main_frame.columnconfigure(0, weight=1)
+
         # Create notebook for different views
         self.notebook = ttk.Notebook(self.main_frame)
-        self.notebook.pack(fill=tk.BOTH, expand=True, pady=5)
-        
+        self.notebook.grid(row=0, column=0, sticky="nsew", pady=5)
+
         # Create the camera status tab
         self.status_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.status_frame, text="Camera Status")
-        
-        # # Create camera configuration tab
-        # self.config_frame = ttk.Frame(self.notebook)
-        # self.notebook.add(self.config_frame, text="Camera Configuration")
 
+        # Create the FITS Header tab
         self.notes_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.notes_frame, text="FITS Header")
 
-        # # Create camera preview tab: TODO may add this back later as a sanity check when using the cameras right before a run.
+        # Create the Camera Preview tab
         self.preview_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.preview_frame, text="Camera Preview")
 
-        # Setup the camera status display
+        # Setup the tabs
         self.setup_status_display()
-
-        # Setup the camera configuration options
-        # self.setup_config_options()
-
         self.setup_notes_display()
-
-        # # Setup the camera preview options
         self.setup_preview_options()
-        
-        # Button frame at the bottom
+
+        # --- Bottom Button Bar ---
         self.button_frame = ttk.Frame(self.main_frame)
-        self.button_frame.pack(fill=tk.X, pady=10)
-        
-        # Refresh button
-        # self.refresh_btn = ttk.Button(self.button_frame, text="Refresh", command=self.refresh_all)
-        # self.refresh_btn.pack(side=tk.RIGHT, padx=5)
-        
-        # Exit button
+        self.button_frame.grid(row=1, column=0, sticky="ew", pady=(10, 0))
+        self.button_frame.columnconfigure(0, weight=1)
+
+        # Exit Button
         self.exit_btn = ttk.Button(self.button_frame, text="Exit", command=self.exit_app)
         self.exit_btn.pack(side=tk.RIGHT, padx=5)
-        
-        #Save Button
+
+        # Save Button
         self.save_btn = ttk.Button(self.button_frame, text="Save", command=self.save_data)
         self.save_btn.pack(side=tk.RIGHT, padx=5)
-        
+
+
+
     def save_data(self):
         self.logger.info("Saving data")
         if self.has_run_experiment:
@@ -685,49 +679,127 @@ class CameraMonitorApp:
 
     def setup_preview_options(self):
         """Setup the camera preview options with live streaming inside the preview_frame"""
-        # Title label
-        preview_title = ttk.Label(self.preview_frame, text="Camera Preview", font=("Arial", 14, "bold"))
-        preview_title.pack(pady=10)
 
-        # Camera selection frame
+        # --- Configure grid layout for preview tab ---
+        self.preview_frame.columnconfigure(0, weight=1)
+        self.preview_frame.rowconfigure(2, weight=1)  # live preview area expands
+
+        # --- Title ---
+        preview_title = ttk.Label(
+            self.preview_frame, text="Camera Preview", font=("Arial", 14, "bold")
+        )
+        preview_title.grid(row=0, column=0, pady=(10, 5))
+
+        # --- Camera selection ---
         preview_selection_frame = ttk.Frame(self.preview_frame)
-        preview_selection_frame.pack(fill=tk.X, padx=20, pady=10)
+        preview_selection_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=(5, 10))
+        preview_selection_frame.columnconfigure(1, weight=1)
 
-        ttk.Label(preview_selection_frame, text="Select Camera:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(preview_selection_frame, text="Select Camera:").grid(
+            row=0, column=0, sticky="w", padx=(0, 5)
+        )
 
-        # Camera selection combobox
+        # Dropdown for selecting connected cameras
         self.preview_camera = tk.StringVar()
-        self.preview_select = ttk.Combobox(preview_selection_frame, textvariable=self.preview_camera, state="readonly")
-
+        self.preview_select = ttk.Combobox(
+            preview_selection_frame, textvariable=self.preview_camera, state="readonly"
+        )
         if len(self.cameras_dict) > 0:
-            self.preview_select['values'] = list(self.cameras_dict.keys())
+            self.preview_select["values"] = list(self.cameras_dict.keys())
             self.preview_select.current(0)
         else:
-            self.preview_select['values'] = []
-        self.preview_select.pack(side=tk.LEFT, padx=5)
+            self.preview_select["values"] = []
+        self.preview_select.grid(row=0, column=1, sticky="ew")
 
-        # Preview display frame
+        # --- Live preview display area ---
         preview_display_frame = ttk.LabelFrame(self.preview_frame, text="Live Preview")
-        preview_display_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        preview_display_frame.grid(row=2, column=0, sticky="nsew", padx=20, pady=(0, 10))
+        self.preview_canvas = tk.Label(
+            preview_display_frame, bg="black", width=640, height=480
+        )
+        self.preview_canvas.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
 
-        # This label will show the live video frames
-        self.preview_canvas = tk.Label(preview_display_frame, bg="black")
-        self.preview_canvas.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
+        # Bind resizing event
+        self.preview_width = 640
+        self.preview_height = 480
+        self.preview_canvas.bind("<Configure>", self.on_preview_resize)
 
-        # Preview control buttons
+        # --- Controls (buttons below the live view) ---
         preview_control_frame = ttk.Frame(self.preview_frame)
-        preview_control_frame.pack(fill=tk.X, pady=10, padx=20)
+        preview_control_frame.grid(row=3, column=0, sticky="ew", padx=20, pady=(0, 15))
 
-        start_preview_btn = ttk.Button(preview_control_frame, text="Start Preview",
-                                       command=lambda: self.toggle_preview(True))
+        start_preview_btn = ttk.Button(
+            preview_control_frame, text="Start Preview",
+            command=lambda: self.toggle_preview(True)
+        )
         start_preview_btn.pack(side=tk.LEFT, padx=5)
 
-        stop_preview_btn = ttk.Button(preview_control_frame, text="Stop Preview",
-                                      command=lambda: self.toggle_preview(False))
+        stop_preview_btn = ttk.Button(
+            preview_control_frame, text="Stop Preview",
+            command=lambda: self.toggle_preview(False)
+        )
         stop_preview_btn.pack(side=tk.LEFT, padx=5)
 
-        capture_btn = ttk.Button(preview_control_frame, text="Capture Image", command=self.capture_image)
+        capture_btn = ttk.Button(
+            preview_control_frame, text="Capture Image", command=self.capture_image
+        )
         capture_btn.pack(side=tk.LEFT, padx=5)
+
+    # def setup_preview_options(self):
+    #     """Setup the camera preview options with live streaming inside the preview_frame"""
+    #
+    #     # === Title ===
+    #     preview_title = ttk.Label(self.preview_frame, text="Camera Preview", font=("Arial", 14, "bold"))
+    #     preview_title.pack(pady=10)
+    #
+    #     # === Camera selection ===
+    #     preview_selection_frame = ttk.Frame(self.preview_frame)
+    #     preview_selection_frame.pack(fill=tk.X, padx=20, pady=10)
+    #
+    #     ttk.Label(preview_selection_frame, text="Select Camera:").pack(side=tk.LEFT, padx=5)
+    #
+    #     self.preview_camera = tk.StringVar()
+    #     self.preview_select = ttk.Combobox(preview_selection_frame, textvariable=self.preview_camera, state="readonly")
+    #     if len(self.cameras_dict) > 0:
+    #         self.preview_select['values'] = list(self.cameras_dict.keys())
+    #         self.preview_select.current(0)
+    #     else:
+    #         self.preview_select['values'] = []
+    #     self.preview_select.pack(side=tk.LEFT, padx=5)
+    #
+    #     # === Live preview area ===
+    #     preview_display_frame = ttk.LabelFrame(self.preview_frame, text="Live Preview")
+    #     preview_display_frame.pack(fill=tk.BOTH, expand=False, padx=20, pady=(10, 0))
+    #
+    #     # Fixed-size canvas area
+    #     self.preview_canvas = tk.Label(preview_display_frame, bg="black", width=640, height=480)
+    #     self.preview_canvas.pack_propagate(False)
+    #     self.preview_canvas.pack(padx=10, pady=10, expand=True)
+    #
+    #     # Track canvas size (for resizing)
+    #     self.preview_width = 640
+    #     self.preview_height = 480
+    #     self.preview_canvas.bind("<Configure>", self.on_preview_resize)
+    #
+    #     # === Controls below the live view ===
+    #     preview_control_frame = ttk.Frame(self.preview_frame)
+    #     preview_control_frame.pack(fill=tk.X, pady=10, padx=20)
+    #
+    #     start_preview_btn = ttk.Button(preview_control_frame, text="Start Preview",
+    #                                    command=lambda: self.toggle_preview(True))
+    #     start_preview_btn.pack(side=tk.LEFT, padx=5)
+    #
+    #     stop_preview_btn = ttk.Button(preview_control_frame, text="Stop Preview",
+    #                                   command=lambda: self.toggle_preview(False))
+    #     stop_preview_btn.pack(side=tk.LEFT, padx=5)
+    #
+    #     capture_btn = ttk.Button(preview_control_frame, text="Capture Image", command=self.capture_image)
+    #     capture_btn.pack(side=tk.LEFT, padx=5)
+
+    def on_preview_resize(self, event):
+        """Update stored preview dimensions when the canvas is resized."""
+        self.preview_width = event.width
+        self.preview_height = event.height
 
     def setup_notes_display(self):
         """Setup the experiment notes interface"""
@@ -860,33 +932,61 @@ class CameraMonitorApp:
         """Start live camera preview loop"""
         try:
             self.preview_cam = self.cameras_dict[serial].cameraObj
-            self.preview_cam.set_exposure(0.04)
+            self.preview_cam.set_exposure(0.1)
+            self.preview_cam.setup_shutter(mode="open")
+            self.preview_cam.set_trigger_mode("int")
+            self.preview_cam.set_amp_mode(
+                channel=0,
+                oamp=0,
+                hsspeed=1,
+                preamp=2
+            )
             self.preview_cam.setup_acquisition(mode="sequence", nframes=100)
+            self.preview_running = True
+
+            sleep(0.5)
             self.preview_cam.start_acquisition()
+            self.preview_thread = threading.Thread(target=self.live_loop, daemon=True)
+            self.preview_thread.start()
         except Exception as e:
             self.preview_canvas.config(text=f"Failed to start camera: {e}")
             self.preview_running = False
             return
 
-        self.update_preview_frame()
+    from PIL import ImageOps
 
-    def update_preview_frame(self):
-        """Fetch latest frame and display it, reschedule next update."""
-        if not getattr(self, "preview_running", False):
-            return  # stop updating if preview stopped
-
+    def live_loop(self):
         try:
-            self.preview_cam.wait_for_frame(timeout=100)
-            frame = self.preview_cam.read_oldest_image()
-            if frame is not None:
-                img = self.array_to_photoimage(frame)
-                self.preview_canvas.config(image=img, text="")
-                self.preview_canvas.image = img  # keep reference to prevent GC
-        except Exception as e:
-            self.preview_canvas.config(text=f"Error reading frame: {e}", image="")
+            self.vmin, self.vmax = None, None
+            while self.preview_running:
+                self.preview_cam.wait_for_frame(timeout=5)
+                frame = self.preview_cam.read_newest_image()
+                if frame is None:
+                    continue
 
-        # Schedule next frame update approx every 30 ms (~33 FPS)
-        self.root.after(30, self.update_preview_frame)
+                # Smooth brightness adjustment
+                fmin, fmax = np.min(frame), np.max(frame)
+                if self.vmin is None:
+                    self.vmin, self.vmax = fmin, fmax
+                else:
+                    self.vmin = 0.9 * self.vmin + 0.1 * fmin
+                    self.vmax = 0.9 * self.vmax + 0.1 * fmax
+
+                frame = np.clip(frame, self.vmin, self.vmax)
+                norm = (255 * (frame - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
+
+                # Convert to displayable image and resize to preview window
+                img = Image.fromarray(norm)
+                img = img.resize((self.preview_width, self.preview_height), Image.Resampling.LANCZOS)
+
+                imgtk = ImageTk.PhotoImage(image=img)
+                self.preview_canvas.after(0, self.update_preview_display, imgtk)
+        finally:
+            self.preview_cam.stop_acquisition()
+
+    def update_preview_display(self, imgtk):
+        self.preview_canvas.imgtk = imgtk
+        self.preview_canvas.configure(image=imgtk)
 
     def array_to_photoimage(self, array):
         """Convert a grayscale numpy array to a Tkinter-compatible PhotoImage"""
