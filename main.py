@@ -745,57 +745,6 @@ class CameraMonitorApp:
         )
         capture_btn.pack(side=tk.LEFT, padx=5)
 
-    # def setup_preview_options(self):
-    #     """Setup the camera preview options with live streaming inside the preview_frame"""
-    #
-    #     # === Title ===
-    #     preview_title = ttk.Label(self.preview_frame, text="Camera Preview", font=("Arial", 14, "bold"))
-    #     preview_title.pack(pady=10)
-    #
-    #     # === Camera selection ===
-    #     preview_selection_frame = ttk.Frame(self.preview_frame)
-    #     preview_selection_frame.pack(fill=tk.X, padx=20, pady=10)
-    #
-    #     ttk.Label(preview_selection_frame, text="Select Camera:").pack(side=tk.LEFT, padx=5)
-    #
-    #     self.preview_camera = tk.StringVar()
-    #     self.preview_select = ttk.Combobox(preview_selection_frame, textvariable=self.preview_camera, state="readonly")
-    #     if len(self.cameras_dict) > 0:
-    #         self.preview_select['values'] = list(self.cameras_dict.keys())
-    #         self.preview_select.current(0)
-    #     else:
-    #         self.preview_select['values'] = []
-    #     self.preview_select.pack(side=tk.LEFT, padx=5)
-    #
-    #     # === Live preview area ===
-    #     preview_display_frame = ttk.LabelFrame(self.preview_frame, text="Live Preview")
-    #     preview_display_frame.pack(fill=tk.BOTH, expand=False, padx=20, pady=(10, 0))
-    #
-    #     # Fixed-size canvas area
-    #     self.preview_canvas = tk.Label(preview_display_frame, bg="black", width=640, height=480)
-    #     self.preview_canvas.pack_propagate(False)
-    #     self.preview_canvas.pack(padx=10, pady=10, expand=True)
-    #
-    #     # Track canvas size (for resizing)
-    #     self.preview_width = 640
-    #     self.preview_height = 480
-    #     self.preview_canvas.bind("<Configure>", self.on_preview_resize)
-    #
-    #     # === Controls below the live view ===
-    #     preview_control_frame = ttk.Frame(self.preview_frame)
-    #     preview_control_frame.pack(fill=tk.X, pady=10, padx=20)
-    #
-    #     start_preview_btn = ttk.Button(preview_control_frame, text="Start Preview",
-    #                                    command=lambda: self.toggle_preview(True))
-    #     start_preview_btn.pack(side=tk.LEFT, padx=5)
-    #
-    #     stop_preview_btn = ttk.Button(preview_control_frame, text="Stop Preview",
-    #                                   command=lambda: self.toggle_preview(False))
-    #     stop_preview_btn.pack(side=tk.LEFT, padx=5)
-    #
-    #     capture_btn = ttk.Button(preview_control_frame, text="Capture Image", command=self.capture_image)
-    #     capture_btn.pack(side=tk.LEFT, padx=5)
-
     def on_preview_resize(self, event):
         """Update stored preview dimensions when the canvas is resized."""
         self.preview_width = event.width
@@ -932,7 +881,7 @@ class CameraMonitorApp:
         """Start live camera preview loop"""
         try:
             self.preview_cam = self.cameras_dict[serial].cameraObj
-            self.preview_cam.set_exposure(0.1)
+            self.preview_cam.set_exposure(0.04)
             self.preview_cam.setup_shutter(mode="open")
             self.preview_cam.set_trigger_mode("int")
             self.preview_cam.set_amp_mode(
@@ -942,7 +891,6 @@ class CameraMonitorApp:
                 preamp=2
             )
             self.preview_cam.setup_acquisition(mode="sequence", nframes=100)
-            self.preview_running = True
 
             sleep(0.5)
             self.preview_cam.start_acquisition()
