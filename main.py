@@ -892,8 +892,6 @@ class CameraMonitorApp:
             self.preview_running = False
             return
 
-    from PIL import ImageOps
-
     def live_loop(self):
         try:
             self.vmin, self.vmax = None, None
@@ -928,9 +926,8 @@ class CameraMonitorApp:
                 img = Image.fromarray(blank)
                 imgtk = ImageTk.PhotoImage(image=img)
 
-                # Update the label
-                self.preview_canvas.imgtk = imgtk
-                self.preview_canvas.configure(image=imgtk)
+                self.update_preview_display(imgtk)
+
             except Exception as e:
                 print(f"Failed to draw preview: {e}")
 
@@ -949,17 +946,34 @@ class CameraMonitorApp:
     def capture_image(self):
         """Capture an image from the selected camera"""
         serial = self.preview_camera.get()
+        cam = self.cameras_dict[serial].cameraObj
 
-        cam = self.cameras_dict[serial]
-        image = cam.capture_image()
-        print("Image size:", image.shape)
-        self.notes_text.delete(1.0, tk.END)
-        # success = self.camera_drivers.capture_image(serial)
+        cam.set_exposure(0.04)
+        cam.set_amp_mode(channel=0, oamp=0, hsspeed=1, preamp=2)
+        cam.set_vsspeed(vsspeed=3)
+        cam.setup_shutter(mode="open")
 
-        # if success:
-        #     messagebox.showinfo("Capture", f"Image captured from camera {serial}")
-        # else:
-        #     messagebox.showerror("Error", f"Failed to capture image from camera {serial}")
+        # Grab image (ensure it's 2D)
+        image = np.squeeze(cam.grab(1))
+        print("Captured image shape:", image.shape)
+
+        # Smooth brightness adjustment
+        fmin, fmax = np.min(image), np.max(image)
+        if not hasattr(self, "vmin") or self.vmin is None:
+            self.vmin, self.vmax = fmin, fmax
+        else:
+            self.vmin = 0.9 * self.vmin + 0.1 * fmin
+            self.vmax = 0.9 * self.vmax + 0.1 * fmax
+
+        image = np.clip(image, self.vmin, self.vmax)
+        norm = (255 * (image - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
+
+        # Convert to displayable image and resize to preview window
+        img = Image.fromarray(norm)
+        img = img.resize((self.preview_width, self.preview_height), Image.Resampling.LANCZOS)
+        imgtk = ImageTk.PhotoImage(image=img)
+
+        self.update_preview_display(imgtk)
 
     def exit_app(self):
         """Clean exit of the application"""
