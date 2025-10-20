@@ -140,7 +140,7 @@ class CameraMonitorApp:
         self.cameras = []
         self.__identify_cameras__()
         self.cameras_dict = {}
-        self.camera_serials = ["13703", "12606", "12574"]
+        self.camera_serials = ["13703", "12606", "12574", "13251"]
 
 
         # Creating UI elements
