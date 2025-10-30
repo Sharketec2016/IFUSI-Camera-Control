@@ -1,0 +1,52 @@
+{
+  "acquisitionMode" : {
+    "Single" : {
+      "exposureTime" : 0,
+      "triggeringMode" : ["int"],
+      "readoutMode" : ["image"],
+      "acquisitionNumber" : 0,
+      "verticalShift" : {
+        "shiftSpeed" : [1, 10, 200],
+        "clockVoltageAmplitude" : [20, 50, 100]
+      },
+      "horizontalShift" : {
+          "readoutRate" : ["30 Mhz", "10 MHz", "5 MHz"],
+          "preAmpGain" : [0, 1],
+          "outputAmp" : [0, 1]
+      },
+      "emGain" : {
+        "state" : ["ON", "OFF"],
+        "gainLevel" : 0
+      },
+      "shutterSettings" : {
+          "mode" : ["OPEN", "CLOSED"]
+      },
+      "temperatureSetpoint" : 0,
+      "fanLevel" : ["full", "low", "off"]
+    },
+    "Kinetic" : {
+      "exposureTime" : 0,
+      "triggeringMode" : ["int"],
+      "readoutMode" : ["image"],
+      "acquisitionNumber" : 0,
+      "verticalShift" : {
+        "shiftSpeed" : [1, 10, 200],
+        "clockVoltageAmplitude" : [20, 50, 100]
+      },
+      "horizontalShift" : {
+          "readoutRate" : ["30 Mhz", "10 MHz", "5 MHz"],
+          "preAmpGain" : [0, 1],
+          "outputAmp" : [0, 1]
+      },
+      "emGain" : {
+        "state" : ["ON", "OFF"],
+        "gainLevel" : 0
+      },
+      "shutterSettings" : {
+          "mode" : ["OPEN", "CLOSED"]
+      },
+      "temperatureSetpoint" : 0,
+      "fanLevel" : ["full", "low", "off"]
+    }
+  }
+}
