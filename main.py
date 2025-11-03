@@ -367,14 +367,14 @@ class CameraMonitorApp:
         return False
 
     def setup_config_display(self):
-        """Build the Camera Configuration tab dynamically with a camera selector and live config viewer."""
+        """Build the Camera Configuration tab dynamically with camera selector, toolbar, and config viewer."""
         self.logger.info("Setting up camera configuration tab")
 
-        # --- Top-level layout ---
-        top_frame = ttk.Frame(self.config_frame)
-        top_frame.pack(fill="x", pady=10)
+        # --- Top toolbar: camera selection + Apply / Reset buttons ---
+        top_frame = ttk.Frame(self.config_frame, padding=(5, 5))
+        top_frame.pack(fill="x", pady=(10, 5), padx=10)
 
-        ttk.Label(top_frame, text="Select Camera:", font=("Helvetica", 12, "bold")).pack(side="left", padx=(10, 5))
+        ttk.Label(top_frame, text="Select Camera:", font=("Helvetica", 12, "bold")).pack(side="left", padx=(0, 5))
 
         # Camera selector dropdown
         self.selected_camera_var = tk.StringVar(value=None)
@@ -388,21 +388,31 @@ class CameraMonitorApp:
         self.camera_selector.pack(side="left", padx=(0, 10))
         self.camera_selector.bind("<<ComboboxSelected>>", self._update_current_camera_display)
 
-        # --- Two-column layout: left (edit), right (current config) ---
+        # Apply and Reset buttons
+        apply_btn = ttk.Button(top_frame, text="Apply to Camera", command=self._apply_camera_config)
+        apply_btn.pack(side="left", padx=(0, 5))
+
+        reset_btn = ttk.Button(top_frame, text="Reset to Defaults", command=self._reset_camera_config)
+        reset_btn.pack(side="left")
+
+        # Spacer (for future elements or to push everything left)
+        ttk.Frame(top_frame).pack(side="left", expand=True)
+
+        # --- Two-column main layout ---
         content_frame = ttk.Frame(self.config_frame)
         content_frame.pack(fill="both", expand=True, padx=10, pady=5)
         content_frame.columnconfigure(0, weight=2)
         content_frame.columnconfigure(1, weight=1)
 
-        # Left column (edit UI)
+        # Left column (config editor)
         left_frame = ttk.LabelFrame(content_frame, text="Configuration Editor", padding=10)
         left_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
-        # Right column (camera’s current configuration)
+        # Right column (current camera config)
         right_frame = ttk.LabelFrame(content_frame, text="Current Camera Configuration", padding=10)
         right_frame.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
 
-        # Scrollable left pane for many options
+        # --- Scrollable config editor in left frame ---
         canvas = tk.Canvas(left_frame)
         scrollbar = ttk.Scrollbar(left_frame, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
@@ -448,12 +458,6 @@ class CameraMonitorApp:
             build_config_section(scrollable_frame, self.cam_config_options_json)
         else:
             ttk.Label(scrollable_frame, text="No configuration JSON loaded").pack(pady=20)
-
-        # --- Buttons for applying / resetting ---
-        button_frame = ttk.Frame(left_frame)
-        button_frame.pack(fill="x", pady=(10, 0))
-        ttk.Button(button_frame, text="Apply to Camera", command=self._apply_camera_config).pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Reset to Defaults", command=self._reset_camera_config).pack(side="right")
 
         # --- Right column: Current camera configuration viewer ---
         self.camera_config_text = tk.Text(right_frame, wrap="none", height=30, state="disabled")
@@ -583,16 +587,6 @@ class CameraMonitorApp:
         This should only really be called after a connect all, or disconnect all.
         :return:
         """
-
-        # self.selected_camera_var = tk.StringVar(value=None)
-        # self.camera_selector = ttk.Combobox(
-        #     top_frame,
-        #     textvariable=self.selected_camera_var,
-        #     values=list(self.cameras_dict.keys()),
-        #     state="readonly",
-        #     width=20
-        # )
-
         try:
             camera_list = list(self.cameras_dict.keys())
             if hasattr(self, "preview_select"):

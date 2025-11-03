@@ -1,8 +1,8 @@
 {
-  "acquisitionMode": "kinetic",
+  "acquisitionMode": "single",
   "triggeringMode": "int",
   "readoutMode": "image",
-  "exposureTime": 1000.0,
+  "exposureTime": 0.0,
   "acquisitionNumber": 1,
   "KineticSeriesLength": 1,
   "KineticCycleTime(sec)": 0.09,
