@@ -5,8 +5,7 @@ Description: Main executable frontend for handing the iXAndor cameras.
 
 
 '''
-
-
+import os
 import tkinter as tk
 from tkinter import filedialog
 from tkinter.font import Font
@@ -187,7 +186,8 @@ class CameraMonitorApp:
             'overflowBehavior': 'restart'
         }
 
-
+        self.config_dir = os.path.join(os.getcwd(), "configs")
+        os.makedirs(self.config_dir, exist_ok=True)
         self.create_ui()
         # self.check_camera_conection()
 
@@ -367,40 +367,64 @@ class CameraMonitorApp:
         return False
 
     def setup_config_display(self):
-        """Build the Camera Configuration tab dynamically from the JSON structure."""
+        """Build the Camera Configuration tab dynamically with a camera selector and live config viewer."""
         self.logger.info("Setting up camera configuration tab")
 
-        # Scrollable frame in case there are many options
-        canvas = tk.Canvas(self.config_frame)
-        scrollbar = ttk.Scrollbar(self.config_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        # --- Top-level layout ---
+        top_frame = ttk.Frame(self.config_frame)
+        top_frame.pack(fill="x", pady=10)
 
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        ttk.Label(top_frame, text="Select Camera:", font=("Helvetica", 12, "bold")).pack(side="left", padx=(10, 5))
+
+        # Camera selector dropdown
+        self.selected_camera_var = tk.StringVar(value=None)
+        self.camera_selector = ttk.Combobox(
+            top_frame,
+            textvariable=self.selected_camera_var,
+            values=list(self.cameras_dict.keys()),
+            state="readonly",
+            width=20
         )
+        self.camera_selector.pack(side="left", padx=(0, 10))
+        self.camera_selector.bind("<<ComboboxSelected>>", self._update_current_camera_display)
 
+        # --- Two-column layout: left (edit), right (current config) ---
+        content_frame = ttk.Frame(self.config_frame)
+        content_frame.pack(fill="both", expand=True, padx=10, pady=5)
+        content_frame.columnconfigure(0, weight=2)
+        content_frame.columnconfigure(1, weight=1)
+
+        # Left column (edit UI)
+        left_frame = ttk.LabelFrame(content_frame, text="Configuration Editor", padding=10)
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+
+        # Right column (camera’s current configuration)
+        right_frame = ttk.LabelFrame(content_frame, text="Current Camera Configuration", padding=10)
+        right_frame.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+
+        # Scrollable left pane for many options
+        canvas = tk.Canvas(left_frame)
+        scrollbar = ttk.Scrollbar(left_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
-
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        # Recursive builder for nested config elements
+        # Build config editor dynamically from JSON
         def build_config_section(parent, data, section_prefix=""):
             for key, value in data.items():
                 full_key = f"{section_prefix}.{key}" if section_prefix else key
 
                 if isinstance(value, dict):
-                    # --- Subsection (like verticalShift or emGain) ---
-                    section_label = ttk.Label(parent, text=key, font=("Helvetica", 12, "bold"))
+                    section_label = ttk.Label(parent, text=key, font=("Helvetica", 11, "bold"))
                     section_label.pack(anchor="w", pady=(10, 0))
                     sub_frame = ttk.Frame(parent, padding=(20, 0, 0, 0))
                     sub_frame.pack(fill="x", padx=10)
                     build_config_section(sub_frame, value, full_key)
 
                 elif isinstance(value, list):
-                    # --- Dropdown menu ---
                     label = ttk.Label(parent, text=key)
                     label.pack(anchor="w", padx=10)
                     var = tk.StringVar(value=value[0])
@@ -409,7 +433,6 @@ class CameraMonitorApp:
                     dropdown.pack(fill="x", padx=20, pady=2)
 
                 elif isinstance(value, (int, float, str)):
-                    # --- Entry box ---
                     label = ttk.Label(parent, text=key)
                     label.pack(anchor="w", padx=10)
                     var_type = tk.DoubleVar if isinstance(value, float) else (
@@ -420,14 +443,132 @@ class CameraMonitorApp:
                     entry = ttk.Entry(parent, textvariable=var)
                     entry.pack(fill="x", padx=20, pady=2)
 
-                else:
-                    self.logger.warning(f"Unsupported config type for {key}: {type(value)}")
-
-        # Build configuration UI
+        # Build from JSON or show fallback message
         if self.cam_config_options_json:
             build_config_section(scrollable_frame, self.cam_config_options_json)
         else:
             ttk.Label(scrollable_frame, text="No configuration JSON loaded").pack(pady=20)
+
+        # --- Buttons for applying / resetting ---
+        button_frame = ttk.Frame(left_frame)
+        button_frame.pack(fill="x", pady=(10, 0))
+        ttk.Button(button_frame, text="Apply to Camera", command=self._apply_camera_config).pack(side="right", padx=5)
+        ttk.Button(button_frame, text="Reset to Defaults", command=self._reset_camera_config).pack(side="right")
+
+        # --- Right column: Current camera configuration viewer ---
+        self.camera_config_text = tk.Text(right_frame, wrap="none", height=30, state="disabled")
+        self.camera_config_text.pack(fill="both", expand=True)
+
+        # Optional: placeholder text
+        self._display_camera_config_text("No camera selected")
+
+    def _display_camera_config_text(self, text: str):
+        """Helper to safely update the right-side text box."""
+        self.camera_config_text.config(state="normal")
+        self.camera_config_text.delete(1.0, tk.END)
+        self.camera_config_text.insert(tk.END, text)
+        self.camera_config_text.config(state="disabled")
+
+    def _update_current_camera_display(self, event=None):
+        """When a camera is selected, load its JSON file (or create one if missing) and display."""
+        serial = self.selected_camera_var.get()
+        if not serial:
+            self._display_camera_config_text("No camera selected.")
+            return
+
+        cfg_path = os.path.join(self.config_dir, f"{serial}_config.json")
+
+        # Load or create config file
+        if os.path.exists(cfg_path):
+            with open(cfg_path, "r") as f:
+                cam_cfg = json.load(f)
+            self.logger.info(f"Loaded config for camera {serial}")
+        else:
+            # Create a new config from template defaults
+            cam_cfg = self._get_default_config_from_template(self.cam_config_options_json)
+            with open(cfg_path, "w") as f:
+                json.dump(cam_cfg, f, indent=2)
+            self.logger.info(f"Created new config file for camera {serial}")
+
+        # Populate UI fields
+        self._populate_config_fields_from_dict(cam_cfg)
+
+        # Update right-hand text viewer
+        self._display_camera_config_text(json.dumps(cam_cfg, indent=2))
+
+    def _apply_camera_config(self):
+        """Apply current UI settings and save to camera-specific JSON file."""
+        serial = self.selected_camera_var.get()
+        if not serial:
+            messagebox.showwarning("No Camera", "Please select a camera first.")
+            return
+
+        cfg_path = os.path.join(self.config_dir, f"{serial}_config.json")
+
+        # Gather all config values from UI
+        all_values = {key: var.get() for key, var in self.config_vars.items()}
+        # Convert from dot notation back to nested JSON
+        new_cfg = self._unflatten_config(all_values)
+
+        # Save to file
+        with open(cfg_path, "w") as f:
+            json.dump(new_cfg, f, indent=2)
+
+        self.logger.info(f"Saved updated config for camera {serial}")
+        self._display_camera_config_text(json.dumps(new_cfg, indent=2))
+
+    def _unflatten_config(self, flat_dict):
+        """Convert {'a.b.c': 1} back into nested dict structure."""
+        result = {}
+        for compound_key, value in flat_dict.items():
+            parts = compound_key.split(".")
+            d = result
+            for part in parts[:-1]:
+                d = d.setdefault(part, {})
+            d[parts[-1]] = value
+        return result
+
+    def _reset_camera_config(self):
+        """Reset UI fields to the default JSON-provided values."""
+        for key, var in self.config_vars.items():
+            parts = key.split(".")
+            data = self.cam_config_options_json
+            try:
+                for part in parts:
+                    data = data[part]
+                if isinstance(data, (list, tuple)):
+                    var.set(data[0])
+                else:
+                    var.set(data)
+            except Exception:
+                pass
+        self.logger.info("Reset configuration UI to defaults.")
+
+    def _populate_config_fields_from_dict(self, config_dict, prefix=""):
+        """Recursively populate UI fields from a dict (based on dot notation keys)."""
+        for key, value in config_dict.items():
+            full_key = f"{prefix}.{key}" if prefix else key
+            if isinstance(value, dict):
+                self._populate_config_fields_from_dict(value, full_key)
+            else:
+                var = self.config_vars.get(full_key)
+                if var is not None:
+                    try:
+                        var.set(value)
+                    except Exception:
+                        pass
+
+    def _get_default_config_from_template(self, template_dict):
+        """Return a concrete config dict (choose first item from lists, use numbers/strings as-is)."""
+        result = {}
+        for key, value in template_dict.items():
+            if isinstance(value, list):
+                result[key] = value[0]
+            elif isinstance(value, dict):
+                result[key] = self._get_default_config_from_template(value)
+            else:
+                result[key] = value
+        return result
 
     def get_current_camera_config(self):
         """Return a dict of all current config values."""
@@ -442,11 +583,21 @@ class CameraMonitorApp:
         This should only really be called after a connect all, or disconnect all.
         :return:
         """
+
+        # self.selected_camera_var = tk.StringVar(value=None)
+        # self.camera_selector = ttk.Combobox(
+        #     top_frame,
+        #     textvariable=self.selected_camera_var,
+        #     values=list(self.cameras_dict.keys()),
+        #     state="readonly",
+        #     width=20
+        # )
+
         try:
             camera_list = list(self.cameras_dict.keys())
             if hasattr(self, "preview_select"):
                 self.preview_select['values'] = camera_list
-
+                self.camera_selector['values'] = camera_list
                 if camera_list:
                     self.preview_select.current(0)
                 else:
