@@ -23,7 +23,7 @@ class CameraState(Enum):
 
 
 
-class AndoriXonCamera():
+class AndoriXonCamera:
     def __init__(self):
         self.serialNumber = None
 
@@ -33,7 +33,6 @@ class AndoriXonCamera():
         self.cam_config = None
         self.head_model = None
         self.controller_mode = None
-
         
         self.is_connected = CameraState.DISCONNECTED
         self.is_in_acquisition = CameraState.NOT_ACQUIRING
@@ -64,90 +63,77 @@ class AndoriXonCamera():
             
         return self.is_in_acquisition
 
-    def camera_configuration(self, cameraDict = None):
+    def configure_camera_settings(self, configDict = None):
         '''
         :param cameraDict: A dictionary that contains two elements. 1. Camera OBJ, 2. Camera config dict
         :return: True or False on configuration
         '''
-        
-        if (cameraDict is not None):
-            configDict = cameraDict['CameraConfiguration']
-            
-        else:
-            amp_mode_defaults = {
-                'channel': 0, 'oamp': 1, 'hsspeed': 100, 'preamp': 200
-            }
-            if self.cameraObj and self.cameraObj.is_opened():
-                amp_modes = self.cameraObj.get_all_amp_modes()
-                if amp_modes:
-                    amp_mode_defaults = {
-                        'channel': amp_modes[0].channel,
-                        'oamp': amp_modes[0].oamp,
-                        'hsspeed': amp_modes[0].hsspeed,
-                        'preamp': amp_modes[0].preamp
-                    }
 
-            configDict = {
-            'acquisitionMode': "kinetic",
-            'triggeringMode': 'int',
-            'readoutMode': 'image',
-            'exposureTime': 0.004,
-            'acquisitionNumber': 1,
-            'frameTransfer': True,
-            'verticalShift': {'shiftSpeed': 0.6, 'clockVoltageAmplitude': None},
-            'horizontalShift': {'readoutRate': '30 MHz', 'preAmpGain': 'Gain 1', 'outputAmp': 'Electron Multiplying'},
-            'baselineClamp': True,
-            'emGain': {'state': False, 'gainLevel': 0},
-            'shutterSettings': {'mode': 'open'},
-            'fanLevel': 'full',
-            'ampMode': amp_mode_defaults,
-            'temperatureSetpoint': 20
-        }
-        configDict['acqconfiguration'] = {
-            'acqMode': 'kinetic',
-            'nframes': 10,
-            'overflowBehavior': 'restart'
-        }
+        if(configDict is None):
+            return False
         self.cam_config = configDict
         self.logger.info(f"Configuring camera {self.serialNumber} with config: {configDict}")
 
         if self.cameraObj:
             if self.cameraObj.is_opened():
                 try:
-                        self.cameraObj.set_fan_mode(mode=configDict['fanLevel'])
-                        self.cameraObj.set_acquisition_mode(mode = configDict['acquisitionMode'])
-                        self.cameraObj.set_trigger_mode(mode = configDict['triggeringMode'])
-                        self.cameraObj.set_read_mode(mode = configDict['readoutMode'])
-                        self.cameraObj.set_exposure(exposure=configDict['exposureTime'])
-                        self.cameraObj.set_EMCCD_gain(gain=configDict['emGain']['gainLevel'], advanced=configDict['emGain']['state'])
-                        self.cameraObj.setup_shutter(mode=configDict['shutterSettings']['mode'])
-                        self.cameraObj.setup_kinetic_mode(num_cycle=configDict['acquisitionNumber'])
-                        self.cameraObj.enable_frame_transfer_mode(enable=configDict['frameTransfer'])
-                        self.cameraObj.setup_image_mode() #letting default values be passed
-                        self.cameraObj.set_amp_mode(channel = configDict['ampMode']['channel'],
-                                            oamp = configDict['ampMode']['oamp'],
-                                            hsspeed = configDict['ampMode']['hsspeed'],
-                                            preamp = configDict['ampMode']['preamp']
-                                            )
-                        self.cameraObj.set_vsspeed(configDict['verticalShift']['shiftSpeed'])
-                        self.cameraObj.set_temperature(configDict['temperatureSetpoint'])
-                        self.acquistion_configuration(self.cam_config)
-                        self.is_configured = CameraState.CONFIGURED
-                        self.logger.info(f"Camera {self.serialNumber} configured successfully")
-                        return True
+                    self.cameraObj.set_fan_mode(mode=configDict['fanLevel'])
+                    self.cameraObj.set_acquisition_mode(mode = configDict['acquisitionMode'])
+                    self.cameraObj.set_trigger_mode(mode = configDict['triggeringMode'])
+                    self.cameraObj.set_read_mode(mode = configDict['readoutMode'])
+                    self.cameraObj.set_exposure(exposure=configDict['exposureTime'])
+                    self.cameraObj.set_EMCCD_gain(gain=configDict['emGain']['gainLevel'])
+                    if(configDict['shutterSettings']['ExternalShutter'].lower() == 'fullauto'):
+                        self.cameraObj.setup_shutter(mode='auto')
+                    elif(configDict['shutterSettings']['ExternalShutter'].lower() == 'open'):
+                        self.cameraObj.setup_shutter(mode='open')
+                    elif(configDict['shutterSettings']['ExternalShutter'].lower() == 'close'):
+                        self.cameraObj.setup_shutter(mode='close')
+
+
+                    if(configDict['acquisitionMode'].lower() == 'kinetic'):
+                        self.cameraObj.setup_kinetic_mode(num_cycle=configDict['KineticSeriesLength'],
+                                                          cycle_time=configDict['KineticCycleTime'],
+                                                          num_acc=configDict['acquisitionNumber']
+                                                          )
+
+                    if(configDict['frameTransfer'].lower() == 'on'):
+                        self.cameraObj.enable_frame_transfer_mode(enable=True)
+                    else:
+                        self.cameraObj.enable_frame_transfer_mode(enable=False)
+
+                    # self.cameraObj.setup_image_mode() #letting default values be passed
+                    # self.cameraObj.set_amp_mode(channel = configDict['ampMode']['channel'],
+                    #                     oamp = configDict['ampMode']['oamp'],
+                    #                     hsspeed = configDict['ampMode']['hsspeed'],
+                    #                     preamp = configDict['ampMode']['preamp']
+                    #                     )
+                    self._configure_amp_mode(configDict)
+                    self.cameraObj.set_vsspeed(configDict['verticalShift']['shiftSpeed'])
+                    self.cameraObj.set_temperature(configDict['temperatureSetpoint'])
+                    self.acquistion_configuration(self.cam_config)
+                    self.is_configured = CameraState.CONFIGURED
+                    self.logger.info(f"Camera {self.serialNumber} configured successfully")
+                    return True
                 except Exception as e:
                     self.logger.error(f"Camera {self.serialNumber} configuration failed: {e}")
                     self.is_configured = CameraState.NOT_CONFIGURED
                     return False
-        return True
+        return False
+
+    def _configure_amp_mode(self, configDict):
+        channel = configDict['ampMode']['channel']
+        oamp = configDict['ampMode']['oamp']
+        hsspeed = configDict['ampMode']['hsspeed']
+        preamp = configDict['ampMode']['preamp']
+
+        # if(channel == 1):
+        #
     
     def acquistion_configuration(self, cameraDict):
         acqDict = cameraDict['acqconfiguration']
         self.cameraObj.setup_acquisition(acqDict['acqMode'], acqDict['nframes'])
         self.cameraObj.set_overflow_behavior(behavior=acqDict['overflowBehavior'])
-    
-    def get_cam_config(self):
-        return self.cam_config
 
     def connect(self, camIndex):
         try:

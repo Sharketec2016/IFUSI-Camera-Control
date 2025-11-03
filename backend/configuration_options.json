@@ -23,8 +23,8 @@
     "gainLevel" : 1
   },
   "shutterSettings" : {
-    "InternalShutter" : ["FullAuto", "PermOpen", "ClosedForBackground", "PermClosed"],
-    "ExternalShutter" : ["FullAuto", "PermOpen", "ClosedForBackground", "PermClosed"]
+    "InternalShutter" : ["FullAuto", "Open", "Closed"],
+    "ExternalShutter" : ["FullAuto", "Open", "Closed"]
   },
   "fanLevel" : ["full", "low", "off"],
   "temperatureSetpoint" : -25
