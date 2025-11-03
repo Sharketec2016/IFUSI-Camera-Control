@@ -1,0 +1,60 @@
+{
+  "acquisitionMode" : {
+    "single" : {
+      "triggeringMode" : "int",
+      "readoutMode" : "image",
+      "exposureTime" : 0.00,
+      "acquisitionNumber" : 1,
+      "frameTransfer" : "OFF",
+      "verticalShift" : {
+        "shiftSpeed" : "4.33",
+        "clockVoltageAmplitude" : "Normal"
+      },
+      "horizontalShift" : {
+        "readoutRate" : "30MHz",
+        "preAmpGain" : "Gain1",
+        "outputAmp" : "EM"
+      },
+      "baselineClamp" : "OFF",
+      "emGain" : {
+        "state" : "OFF",
+        "gainLevel" : 1
+      },
+      "shutterSettings" : {
+        "InternalShutter" : "PermOpen",
+        "ExternalShutter" : "PermOpen"
+      },
+      "fanLevel" : "full",
+      "temperatureSetpoint" : -25
+    },
+    "kinetic" : {
+      "triggeringMode" : "int",
+      "readoutMode" : "image",
+      "exposureTime" : 0.00,
+      "acquisitionNumber" : 1,
+      "frameTransfer" : "OFF",
+      "KineticSeriesLength" : 1,
+      "KineticCycleTime(sec)" : 0.09,
+      "verticalShift" : {
+        "shiftSpeed" : "4.33",
+        "clockVoltageAmplitude" : "Normal"
+      },
+      "horizontalShift" : {
+        "readoutRate" : "30MHz",
+        "preAmpGain" : "Gain1",
+        "outputAmp" : "EM"
+      },
+      "baselineClamp" : "OFF",
+      "emGain" : {
+        "state" : "OFF",
+        "gainLevel" : 1
+      },
+      "shutterSettings" : {
+        "InternalShutter" : "PermOpen",
+        "ExternalShutter" : "PermOpen"
+      },
+      "fanLevel" : "full",
+      "temperatureSetpoint" : -25
+    }
+  }
+}
