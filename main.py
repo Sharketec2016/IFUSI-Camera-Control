@@ -128,7 +128,7 @@ class CameraMonitorApp:
     def __init__(self, root, debugLogging = False, cam_config_options_json = None):
         self.root = root
         self.root.title("Camera Monitoring System")
-        self.root.geometry("1200x800")
+        self.root.geometry("800x600")
         self.root.minsize(800, 600)
         self.logger = self._setup_logging(debugLogging)
         self.custom_font = Font(family="Helvetica", size=14, weight="bold")
@@ -191,7 +191,6 @@ class CameraMonitorApp:
         self.create_ui()
         # self.check_camera_conection()
 
-
     def __identify_cameras__(self):
         try:
             num_cameras = Andor.get_cameras_number_SDK2()
@@ -245,10 +244,14 @@ class CameraMonitorApp:
         self.preview_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.preview_frame, text="Camera Preview")
 
+        self.config_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.config_frame, text="Camera Configuration")
+
         # Setup the tabs
         self.setup_status_display()
         self.setup_notes_display()
         self.setup_preview_options()
+        self.setup_config_display()
 
         # --- Bottom Button Bar ---
         self.button_frame = ttk.Frame(self.main_frame)
@@ -262,8 +265,6 @@ class CameraMonitorApp:
         # Save Button
         self.save_btn = ttk.Button(self.button_frame, text="Save", command=self.save_data)
         self.save_btn.pack(side=tk.RIGHT, padx=5)
-
-
 
     def save_data(self):
         self.logger.info("Saving data")
@@ -365,6 +366,76 @@ class CameraMonitorApp:
                 return True
         return False
 
+    def setup_config_display(self):
+        """Build the Camera Configuration tab dynamically from the JSON structure."""
+        self.logger.info("Setting up camera configuration tab")
+
+        # Scrollable frame in case there are many options
+        canvas = tk.Canvas(self.config_frame)
+        scrollbar = ttk.Scrollbar(self.config_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Recursive builder for nested config elements
+        def build_config_section(parent, data, section_prefix=""):
+            for key, value in data.items():
+                full_key = f"{section_prefix}.{key}" if section_prefix else key
+
+                if isinstance(value, dict):
+                    # --- Subsection (like verticalShift or emGain) ---
+                    section_label = ttk.Label(parent, text=key, font=("Helvetica", 12, "bold"))
+                    section_label.pack(anchor="w", pady=(10, 0))
+                    sub_frame = ttk.Frame(parent, padding=(20, 0, 0, 0))
+                    sub_frame.pack(fill="x", padx=10)
+                    build_config_section(sub_frame, value, full_key)
+
+                elif isinstance(value, list):
+                    # --- Dropdown menu ---
+                    label = ttk.Label(parent, text=key)
+                    label.pack(anchor="w", padx=10)
+                    var = tk.StringVar(value=value[0])
+                    self.config_vars[full_key] = var
+                    dropdown = ttk.Combobox(parent, textvariable=var, values=value, state="readonly")
+                    dropdown.pack(fill="x", padx=20, pady=2)
+
+                elif isinstance(value, (int, float, str)):
+                    # --- Entry box ---
+                    label = ttk.Label(parent, text=key)
+                    label.pack(anchor="w", padx=10)
+                    var_type = tk.DoubleVar if isinstance(value, float) else (
+                        tk.IntVar if isinstance(value, int) else tk.StringVar
+                    )
+                    var = var_type(value=value)
+                    self.config_vars[full_key] = var
+                    entry = ttk.Entry(parent, textvariable=var)
+                    entry.pack(fill="x", padx=20, pady=2)
+
+                else:
+                    self.logger.warning(f"Unsupported config type for {key}: {type(value)}")
+
+        # Build configuration UI
+        if self.cam_config_options_json:
+            build_config_section(scrollable_frame, self.cam_config_options_json)
+        else:
+            ttk.Label(scrollable_frame, text="No configuration JSON loaded").pack(pady=20)
+
+    def get_current_camera_config(self):
+        """Return a dict of all current config values."""
+        result = {}
+        for key, var in self.config_vars.items():
+            result[key] = var.get()
+        return result
+
     def update_UI_elements(self):
         """
         This function updated the necessary UI elements with the appropriate values for connected cameras.
@@ -446,25 +517,6 @@ class CameraMonitorApp:
                 self.camera_status_labels[serial]["status_label"].config(text="Error", fg="red")
                 self.logger.error(f"Error disconnecting from camera {serial}: {e}")
         self.update_UI_elements()
-
-    # #TODO Need to investigate a different method for trying to confirm whether a camera is still connected. The current method doesnt seem to be working
-    # def refresh_all(self):
-    #     """Refresh the status of all cameras."""
-    #     self.logger.info("Refreshing all camera statuses...")
-    #     serials = list(self.cameras_dict.keys()) #we grab the serials from the dict because that dict contains all the cameras that are connected.
-    #     for serial in serials:
-    #         try:
-    #             cam = self.cameras_dict[serial]
-    #             if cam.connection_status():
-    #                 self.camera_status_labels[serial]["status_label"].config(text="Connected", fg="green")
-    #                 self.camera_status_labels[serial]["serial_label"].config(fg="green")
-    #             else:
-    #                 self.camera_status_labels[serial]["status_label"].config(text="Disconnected", fg="red")
-    #                 self.camera_status_labels[serial]["serial_label"].config(fg="red")
-    #         except Exception as e:
-    #             self.logger.error(f"Failed to refresh camera status for {serial}. Might be disconnected: {e}")
-    #             print(f"Failed to refresh camera status for {serial}. Might be disconnected.")
-
 
     def save_fits_header(self):
         """Save the content of the notes text area to a file."""
@@ -869,7 +921,6 @@ class CameraMonitorApp:
             self.preview_select.configure(state="readonly")
             self.preview_canvas.config(text="Preview stopped", image="")
 
-
     def start_camera_preview(self, serial):
         """Start live camera preview loop"""
         try:
@@ -932,7 +983,6 @@ class CameraMonitorApp:
 
             except Exception as e:
                 print(f"Failed to draw preview: {e}")
-
 
     def update_preview_display(self, imgtk):
         self.preview_canvas.imgtk = imgtk
