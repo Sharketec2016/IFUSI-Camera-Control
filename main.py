@@ -1228,7 +1228,7 @@ class CameraMonitorApp:
 
     def checking_connected_cams_temp(self):
         for serial, cam in self.cameras_dict.items():
-            print(f"Current temperature: {cam.get_temperature():.2f} C | Setpoint: {cam.get_temperature_setpoint()} C")
+            print(f"Current temperature: {cam.get_temperature():.2f} C | Setpoint: {cam.temperature_setpoint} C")
 
         self.root.after(ms=2000, func=self.checking_connected_cams_temp)
 
