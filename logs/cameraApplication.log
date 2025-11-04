@@ -936,3 +936,8 @@
 [2025-11-04 17:03:36] CameraApplication:INFO:Disconnecting all cameras...
 [2025-11-04 17:03:37] CameraApplication:INFO:Camera 13251 disconnected.
 [2025-11-04 17:03:39] CameraApplication:INFO:Disconnecting all cameras...
+[2025-11-04 17:10:43] CameraApplication:INFO:Logging level set to DEBUG
+[2025-11-04 17:10:43] CameraApplication:INFO:Number of cameras detected: 1
+[2025-11-04 17:10:43] CameraApplication:INFO:Creating UI
+[2025-11-04 17:10:43] CameraApplication:INFO:Setting up camera status display
+[2025-11-04 17:10:43] CameraApplication:INFO:Setting up camera configuration tab
