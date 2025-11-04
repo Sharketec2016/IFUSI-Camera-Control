@@ -165,11 +165,12 @@ class CameraMonitorApp:
     def __identify_cameras__(self):
         try:
             num_cameras = Andor.get_cameras_number_SDK2()
+            print(f"Number of cameras detected: {num_cameras}")
+            self.logger.info(f"Number of cameras detected: {num_cameras}")
             if(num_cameras == 0):
                 self.cameras = None
                 return None
-            print(f"Number of cameras detected: {num_cameras}")
-            self.logger.info(f"Number of cameras detected: {num_cameras}")
+
             if num_cameras < 1:
                 self.logger.error(f"ERROR: No cameras were detected when program was started.")
             return num_cameras
@@ -822,15 +823,15 @@ class CameraMonitorApp:
                     self.config_labels_dict[key].config(text=str(value))
                     self.config_labels_dict[key][k2].config(text=new_val)
                     self.cameras_dict[serialNumber].cam_config[key][k2] = new_val
-            else:
-                try:
-                    var = self.config_vars.get(key, None)
-                    if var is not None and not isinstance(var, dict):
-                        new_val = var.get()
-                    else:
-                        new_val = self.config_entrys_dict[key].get()
-                except Exception:
-                    new_val = self.config_entrys_dict[key].get()
+            # else:
+            #     try:
+            #         var = self.config_vars.get(key, None)
+            #         if var is not None and not isinstance(var, dict):
+            #             new_val = var.get()
+            #         else:
+            #             new_val = self.config_entrys_dict[key].get()
+            #     except Exception:
+            #         new_val = self.config_entrys_dict[key].get()
 
                 self.config_labels_dict[key].config(text=new_val)
                 self.cameras_dict[serialNumber].cam_config[key] = new_val

@@ -190,7 +190,7 @@ class Camera(AndorSDK2Camera):
         self.head_model = None
         self.controller_mode = None
 
-        self.connection_status = CameraState.DISCONNECTED if self.is_opened() else CameraState.CONNECTED
+        self.connection_status = CameraState.CONNECTED if self.is_opened() else CameraState.DISCONNECTED
         self.is_in_acquisition = CameraState.NOT_ACQUIRING
         self.is_configured = CameraState.NOT_CONFIGURED
         self.logger = self.setup_logging()  # for now implement the logging feature automatically. we might want to change that later if it takes up too much time.
@@ -301,7 +301,7 @@ class Camera(AndorSDK2Camera):
                 return False
         return True
     def get_camera_connetion_status(self):
-        self.connection_status = CameraState.DISCONNECTED if self.is_opened() else CameraState.CONNECTED
+        self.connection_status = CameraState.CONNECTED if self.is_opened() else CameraState.DISCONNECTED
         return self.connection_status
     def get_acquisition_status(self):
         self.is_in_acquisition = CameraState.ACQUIRING if self.get_status() == "acquiring" else CameraState.NOT_ACQUIRING
