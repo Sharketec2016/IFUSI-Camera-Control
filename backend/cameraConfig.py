@@ -317,3 +317,7 @@ class Camera(AndorSDK2Camera):
     def get_camera_connetion_status(self):
         self.connection_status = CameraState.DISCONNECTED if self.is_opened() else CameraState.CONNECTED
         return self.connection_status
+    def get_acquisition_status(self):
+        self.is_in_acquisition = CameraState.ACQUIRING if self.get_status() == "acquiring" else CameraState.NOT_ACQUIRING
+        return self.is_in_acquisition
+
