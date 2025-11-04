@@ -425,13 +425,13 @@ class CameraMonitorApp:
         self.logger.info("Disconnecting all cameras...")
         serials = list(self.cameras_dict.keys())
         for serial in serials:
-            cam = self.cameras_dict.pop(serial)
+            cam = self.cameras_dict[serial]
             try:
                 if cam.disconnect():
                     self.camera_status_labels[serial]["status_label"].config(text="Disconnected", foreground="black")
                     self.camera_status_labels[serial]["serial_label"].config(fg="red")
                     self.logger.info(f"Camera {serial} disconnected.")
-                    # self.cameras_dict.pop(serial)
+                    self.cameras_dict.pop(serial)
                 else:
                     self.camera_status_labels[serial]["status_label"].config(text="Error", foreground="black")
                     self.camera_status_labels[serial]["serial_label"].config(fg="red")
@@ -440,23 +440,6 @@ class CameraMonitorApp:
                 self.logger.error(f"Error disconnecting from camera {serial}: {e}")
         self.update_UI_elements()
 
-    # #TODO Need to investigate a different method for trying to confirm whether a camera is still connected. The current method doesnt seem to be working
-    # def refresh_all(self):
-    #     """Refresh the status of all cameras."""
-    #     self.logger.info("Refreshing all camera statuses...")
-    #     serials = list(self.cameras_dict.keys()) #we grab the serials from the dict because that dict contains all the cameras that are connected.
-    #     for serial in serials:
-    #         try:
-    #             cam = self.cameras_dict[serial]
-    #             if cam.connection_status():
-    #                 self.camera_status_labels[serial]["status_label"].config(text="Connected", fg="green")
-    #                 self.camera_status_labels[serial]["serial_label"].config(fg="green")
-    #             else:
-    #                 self.camera_status_labels[serial]["status_label"].config(text="Disconnected", fg="red")
-    #                 self.camera_status_labels[serial]["serial_label"].config(fg="red")
-    #         except Exception as e:
-    #             self.logger.error(f"Failed to refresh camera status for {serial}. Might be disconnected: {e}")
-    #             print(f"Failed to refresh camera status for {serial}. Might be disconnected.")
 
 
     def save_fits_header(self):
@@ -515,37 +498,7 @@ class CameraMonitorApp:
             self.logger.error(f"Error loading notes: {e}")
             messagebox.showerror("Error", f"Failed to load notes:\n{e}")
     
-    def save_values(self):
-        serialNumber = self.selected_camera.get()
-        # self.config_serial_number = serialNumber
-        configDict = self.cameras_dict[serialNumber].cam_config
-        for key, value in configDict.items():
-            if type(value) == dict:
-                for k2, v2 in value.items():
-                    # prefer variable-backed values if available
-                    try:
-                        var = self.config_vars.get(key, {}).get(k2, None)
-                        if var is not None:
-                            new_val = var.get()
-                        else:
-                            new_val = self.config_entrys_dict[key][k2].get()
-                    except Exception:
-                        new_val = self.config_entrys_dict[key][k2].get()
 
-                    self.config_labels_dict[key][k2].config(text=new_val)
-                    self.cameras_dict[serialNumber].cam_config[key][k2] = new_val
-            else:
-                try:
-                    var = self.config_vars.get(key, None)
-                    if var is not None and not isinstance(var, dict):
-                        new_val = var.get()
-                    else:
-                        new_val = self.config_entrys_dict[key].get()
-                except Exception:
-                    new_val = self.config_entrys_dict[key].get()
-
-                self.config_labels_dict[key].config(text=new_val)
-                self.cameras_dict[serialNumber].cam_config[key] = new_val
         
     def setup_config_options(self):
         """Setup the camera configuration options"""
@@ -866,7 +819,7 @@ class CameraMonitorApp:
     def start_camera_preview(self, serial):
         """Start live camera preview loop"""
         try:
-            self.preview_cam = self.cameras_dict[serial].cameraObj
+            self.preview_cam = self.cameras_dict[serial]
             self.preview_cam.set_exposure(0.04)
             self.preview_cam.setup_shutter(mode="open")
             self.preview_cam.set_trigger_mode("int")
@@ -941,7 +894,7 @@ class CameraMonitorApp:
     def capture_image(self):
         """Capture an image from the selected camera"""
         serial = self.preview_camera.get()
-        cam = self.cameras_dict[serial].cameraObj
+        cam = self.cameras_dict[serial]
 
         cam.set_exposure(0.04)
         cam.set_amp_mode(channel=0, oamp=0, hsspeed=1, preamp=2)
@@ -1115,7 +1068,7 @@ class CameraMonitorApp:
         for serial in serials:
             try:
                 cam = self.cameras_dict[serial]
-                if cam.connection_status():
+                if cam.get_camera_connetion_status == CameraState.CONNECTED:
                     self.camera_status_labels[serial]["status_label"].config(text="Connected", fg="green")
                     self.camera_status_labels[serial]["serial_label"].config(fg="green")
                 else:
