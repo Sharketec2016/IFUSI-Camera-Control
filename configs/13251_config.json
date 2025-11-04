@@ -1,29 +1,29 @@
 {
-  "acquisitionMode": "single",
+  "acquisitionMode": "kinetic",
   "triggeringMode": "int",
   "readoutMode": "image",
-  "exposureTime": 0.0,
+  "exposureTime": 40.0,
   "acquisitionNumber": 1,
-  "KineticSeriesLength": 1,
+  "KineticSeriesLength": 1000,
   "KineticCycleTime(sec)": 0.09,
-  "frameTransfer": "OFF",
+  "frameTransfer": "ON",
   "verticalShift": {
     "shiftSpeed": "0.6",
     "clockVoltageAmplitude": "Normal"
   },
   "horizontalShift": {
-    "readoutRate": "1MHz",
+    "readoutRate": "30MHz",
     "preAmpGain": "Gain1",
     "outputAmp": "EM"
   },
   "baselineClamp": "OFF",
   "emGain": {
-    "state": "OFF",
-    "gainLevel": 1
+    "state": "ON",
+    "gainLevel": 2
   },
   "shutterSettings": {
-    "InternalShutter": "FullAuto",
-    "ExternalShutter": "FullAuto"
+    "InternalShutter": "Open",
+    "ExternalShutter": "Open"
   },
   "fanLevel": "full",
   "temperatureSetpoint": -25
