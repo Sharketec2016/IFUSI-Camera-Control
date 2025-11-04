@@ -2,6 +2,7 @@ import json
 from pprint import pprint
 from pylablib.devices import Andor
 from pylablib.devices.Andor import AndorSDK2Camera
+from astropy.io import fits
 import os
 from enum import Enum
 import logging as log

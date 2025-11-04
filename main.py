@@ -27,6 +27,8 @@ import json
 import pylablib as pll
 pll.par["devices/dlls/andor_sdk2"] = r"./Andor_Driver_Pack_2"
 import pylablib.devices.Andor as Andor
+import numpy as np
+from time import sleep
 
 
 save_data_path = ""
