@@ -122,14 +122,7 @@ class AndoriXonCamera:
                     return False
         return False
 
-    def _configure_amp_mode(self, configDict):
-        channel = configDict['ampMode']['channel']
-        oamp = configDict['ampMode']['oamp']
-        hsspeed = configDict['ampMode']['hsspeed']
-        preamp = configDict['ampMode']['preamp']
 
-        # if(channel == 1):
-        #
     
     def acquistion_configuration(self, cameraDict):
         acqDict = cameraDict['acqconfiguration']
@@ -223,15 +216,17 @@ class Camera(AndorSDK2Camera):
                 return False
         except Exception as e:
             self.logger.error(f"Error disconnecting camera {self.serialNumber}: {e}")
-    def camera_configuration(self, cameraDict=None):
+    def camera_configuration(self, configDict=None, configDir = None):
         '''
         :param cameraDict: A dictionary that contains two elements. 1. Camera OBJ, 2. Camera config dict
         :return: True or False on configuration
         '''
 
         if (cameraDict is not None):
-            configDict = cameraDict['CameraConfiguration']
+            self.cam_config = configDict
 
+        elif(configDir is not None):
+                pass
         else:
             amp_mode_defaults = {
                 'channel': 0, 'oamp': 1, 'hsspeed': 100, 'preamp': 200
@@ -263,11 +258,13 @@ class Camera(AndorSDK2Camera):
                 'ampMode': amp_mode_defaults,
                 'temperatureSetpoint': 20
             }
-        configDict['acqconfiguration'] = {
-            'acqMode': 'kinetic',
-            'nframes': 10,
-            'overflowBehavior': 'restart'
-        }
+            configDict['acqconfiguration'] = {
+                'acqMode': 'kinetic',
+                'nframes': 10,
+                'overflowBehavior': 'restart'
+            }
+
+
         self.cam_config = configDict
         self.logger.info(f"Configuring camera {self.serialNumber} with config: {configDict}")
 
@@ -279,19 +276,28 @@ class Camera(AndorSDK2Camera):
                 self.set_trigger_mode(mode=configDict['triggeringMode'])
                 self.set_read_mode(mode=configDict['readoutMode'])
                 self.set_exposure(exposure=configDict['exposureTime'])
-                self.set_EMCCD_gain(gain=configDict['emGain']['gainLevel'],
-                                              advanced=configDict['emGain']['state'])
-                self.setup_shutter(mode=configDict['shutterSettings']['mode'])
-                self.setup_kinetic_mode(num_cycle=configDict['acquisitionNumber'])
-                self.enable_frame_transfer_mode(enable=configDict['frameTransfer'])
-                self.setup_image_mode()  # letting default values be passed
-                self.set_amp_mode(channel=configDict['ampMode']['channel'],
-                                            oamp=configDict['ampMode']['oamp'],
-                                            hsspeed=configDict['ampMode']['hsspeed'],
-                                            preamp=configDict['ampMode']['preamp']
-                                            )
-                self.set_vsspeed(configDict['verticalShift']['shiftSpeed'])
-                self.set_temperature(configDict['temperatureSetpoint'])
+                self.set_EMCCD_gain(gain=configDict['emGain']['gainLevel'])
+                if (configDict['shutterSettings']['ExternalShutter'].lower() == 'fullauto'):
+                    self.setup_shutter(mode='auto')
+                elif (configDict['shutterSettings']['ExternalShutter'].lower() == 'open'):
+                    self.setup_shutter(mode='open')
+                elif (configDict['shutterSettings']['ExternalShutter'].lower() == 'close'):
+                    self.setup_shutter(mode='close')
+
+                if (configDict['acquisitionMode'].lower() == 'kinetic'):
+                    self.setup_kinetic_mode(num_cycle=configDict['KineticSeriesLength'],
+                                                      cycle_time=configDict['KineticCycleTime'],
+                                                      num_acc=configDict['acquisitionNumber']
+                                                      )
+
+                if (configDict['frameTransfer'].lower() == 'on'):
+                    self.enable_frame_transfer_mode(enable=True)
+                else:
+                    self.enable_frame_transfer_mode(enable=False)
+
+                self._configure_amp_mode(configDict=configDict)
+                self._configure_vsspeed(configDict=configDict)
+                self.set_temperature(int(configDict['temperatureSetpoint']))
                 self.is_configured = CameraState.CONFIGURED
                 self.logger.info(f"Camera {self.serialNumber} configured successfully")
                 return True
@@ -300,6 +306,45 @@ class Camera(AndorSDK2Camera):
                 self.is_configured = CameraState.NOT_CONFIGURED
                 return False
         return True
+
+    def _configure_amp_mode(self, configDict):
+        channel = 0
+        oamp = 0 if configDict['horizontalShift']['outputAmp'] is "EM" else 1
+        preamp = 0 if configDict['horizontalShift']['preAmpGain'] is "Gain1" else 1
+        if(configDict['horizontalShift']['readoutRate'] == "30MHz"):
+            hsspeed = 0
+        elif (configDict['horizontalShift']['readoutRate'] == "20MHz"):
+            hsspeed = 1
+        elif(configDict['horizontalShift']['readoutRate'] == "10MHz"):
+            hsspeed = 2
+        elif(configDict['horizontalShift']['readoutRate'] == "1MHz"):
+            hsspeed = 3
+        else:
+            hsspeed = 0
+
+
+        self.set_amp_mode(
+            channel=channel,
+            oamp = oamp,
+            hsspeed = hsspeed,
+            preamp = preamp
+        )
+
+    def _configure_vsspeed(self, configDict):
+        all_speeds = self.get_all_vsspeeds()
+        if(configDict['verticalShift']['shiftSpeed'] == '0.6'):
+            self.set_vsspeed(all_speeds[0])
+        elif(configDict['verticalShift']['shiftSpeed'] == '1.13'):
+            self.set_vsspeed(all_speeds[1])
+        elif(configDict['verticalShift']['shiftSpeed'] == '2.2'):
+            self.set_vsspeed(all_speeds[2])
+        elif(configDict['verticalShift']['shiftSpeed'] == '4.33'):
+            self.set_vsspeed(all_speeds[3])
+        else
+            self.set_vsspeed(all_speeds[0])
+
+
+
     def get_camera_connetion_status(self):
         self.connection_status = CameraState.CONNECTED if self.is_opened() else CameraState.DISCONNECTED
         return self.connection_status

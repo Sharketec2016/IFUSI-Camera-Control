@@ -1,0 +1,39 @@
+pprint(cam.get_all_amp_modes()) =[
+TAmpModeFull(channel=0,
+                channel_bitdepth=16,
+                oamp=0,
+                oamp_kind='Electron Multiplying',
+                hsspeed=0,
+                hsspeed_MHz=30.0,
+                preamp=0,
+                preamp_gain=1.0)
+    ,
+
+ReadoutRate = hsspeed_MHz
+preAmpGain = preamp_gain or preamp
+outputAmp = oamp_kind or oamp.
+channel will always be 0
+
+
+
+    TAmpModeFull(channel=0, channel_bitdepth=16, oamp=0, oamp_kind='Electron Multiplying', hsspeed=0, hsspeed_MHz=30.0, preamp=1, preamp_gain=2.0),
+    TAmpModeFull(channel=0, channel_bitdepth=16, oamp=0, oamp_kind='Electron Multiplying', hsspeed=1, hsspeed_MHz=20.0, preamp=0, preamp_gain=1.0),
+    TAmpModeFull(channel=0, channel_bitdepth=16, oamp=0, oamp_kind='Electron Multiplying', hsspeed=1, hsspeed_MHz=20.0, preamp=1, preamp_gain=2.0),
+    TAmpModeFull(channel=0, channel_bitdepth=16, oamp=0, oamp_kind='Electron Multiplying', hsspeed=2, hsspeed_MHz=10.0, preamp=0, preamp_gain=1.0),
+    TAmpModeFull(channel=0, channel_bitdepth=16, oamp=0, oamp_kind='Electron Multiplying', hsspeed=2, hsspeed_MHz=10.0, preamp=1, preamp_gain=2.0),
+    TAmpModeFull(channel=0, channel_bitdepth=16, oamp=0, oamp_kind='Electron Multiplying', hsspeed=3, hsspeed_MHz=1.0, preamp=0, preamp_gain=1.0),
+    TAmpModeFull(channel=0, channel_bitdepth=16, oamp=0, oamp_kind='Electron Multiplying', hsspeed=3, hsspeed_MHz=1.0, preamp=1, preamp_gain=2.0),
+    TAmpModeFull(channel=0, channel_bitdepth=16, oamp=1, oamp_kind='Conventional', hsspeed=0, hsspeed_MHz=1.0, preamp=0, preamp_gain=1.0),
+    TAmpModeFull(channel=0, channel_bitdepth=16, oamp=1, oamp_kind='Conventional', hsspeed=1, hsspeed_MHz=0.10000000149011612, preamp=0, preamp_gain=1.0),
+    TAmpModeFull(channel=0, channel_bitdepth=16, oamp=1, oamp_kind='Conventional', hsspeed=1, hsspeed_MHz=0.10000000149011612, preamp=1, preamp_gain=2.0)]
+
+
+
+pprint(cam.get_all_vsspeeds()) = [0.6000000238418579, 1.1299999952316284, 2.200000047683716, 4.329999923706055]
+
+
+
+
+
+
+
