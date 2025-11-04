@@ -225,3 +225,95 @@ class Camera(AndorSDK2Camera):
             handler.setFormatter(formatter)
             logger.addHandler(handler)
         return logger
+    def disconnect(self):
+        try:
+            if self.is_opened():
+                self.close()
+                self.connection_status = CameraState.DISCONNECTED
+                self.logger.info(f"Camera {self.serialNumber} is disconnected")
+                return True
+            else:
+                self.logger.info(f"Camera {self.serialNumber} is already disconnected")
+                return False
+        except Exception as e:
+            self.logger.error(f"Error disconnecting camera {self.serialNumber}: {e}")
+    def camera_configuration(self, cameraDict=None):
+        '''
+        :param cameraDict: A dictionary that contains two elements. 1. Camera OBJ, 2. Camera config dict
+        :return: True or False on configuration
+        '''
+
+        if (cameraDict is not None):
+            configDict = cameraDict['CameraConfiguration']
+
+        else:
+            amp_mode_defaults = {
+                'channel': 0, 'oamp': 1, 'hsspeed': 100, 'preamp': 200
+            }
+            if self.is_opened():
+                amp_modes = self.get_all_amp_modes()
+                if amp_modes:
+                    amp_mode_defaults = {
+                        'channel': amp_modes[0].channel,
+                        'oamp': amp_modes[0].oamp,
+                        'hsspeed': amp_modes[0].hsspeed,
+                        'preamp': amp_modes[0].preamp
+                    }
+
+            configDict = {
+                'acquisitionMode': "kinetic",
+                'triggeringMode': 'int',
+                'readoutMode': 'image',
+                'exposureTime': 0.004,
+                'acquisitionNumber': 1,
+                'frameTransfer': True,
+                'verticalShift': {'shiftSpeed': 0.6, 'clockVoltageAmplitude': None},
+                'horizontalShift': {'readoutRate': '30 MHz', 'preAmpGain': 'Gain 1',
+                                    'outputAmp': 'Electron Multiplying'},
+                'baselineClamp': True,
+                'emGain': {'state': False, 'gainLevel': 0},
+                'shutterSettings': {'mode': 'open'},
+                'fanLevel': 'full',
+                'ampMode': amp_mode_defaults,
+                'temperatureSetpoint': 20
+            }
+        configDict['acqconfiguration'] = {
+            'acqMode': 'kinetic',
+            'nframes': 10,
+            'overflowBehavior': 'restart'
+        }
+        self.cam_config = configDict
+        self.logger.info(f"Configuring camera {self.serialNumber} with config: {configDict}")
+
+
+        if self.is_opened():
+            try:
+                self.set_fan_mode(mode=configDict['fanLevel'])
+                self.set_acquisition_mode(mode=configDict['acquisitionMode'])
+                self.set_trigger_mode(mode=configDict['triggeringMode'])
+                self.set_read_mode(mode=configDict['readoutMode'])
+                self.set_exposure(exposure=configDict['exposureTime'])
+                self.set_EMCCD_gain(gain=configDict['emGain']['gainLevel'],
+                                              advanced=configDict['emGain']['state'])
+                self.setup_shutter(mode=configDict['shutterSettings']['mode'])
+                self.setup_kinetic_mode(num_cycle=configDict['acquisitionNumber'])
+                self.enable_frame_transfer_mode(enable=configDict['frameTransfer'])
+                self.setup_image_mode()  # letting default values be passed
+                self.set_amp_mode(channel=configDict['ampMode']['channel'],
+                                            oamp=configDict['ampMode']['oamp'],
+                                            hsspeed=configDict['ampMode']['hsspeed'],
+                                            preamp=configDict['ampMode']['preamp']
+                                            )
+                self.set_vsspeed(configDict['verticalShift']['shiftSpeed'])
+                self.set_temperature(configDict['temperatureSetpoint'])
+                self.is_configured = CameraState.CONFIGURED
+                self.logger.info(f"Camera {self.serialNumber} configured successfully")
+                return True
+            except Exception as e:
+                self.logger.error(f"Camera {self.serialNumber} configuration failed: {e}")
+                self.is_configured = CameraState.NOT_CONFIGURED
+                return False
+        return True
+    def get_camera_connetion_status(self):
+        self.connection_status = CameraState.DISCONNECTED if self.is_opened() else CameraState.CONNECTED
+        return self.connection_status
