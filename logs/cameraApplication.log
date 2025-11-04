@@ -1040,3 +1040,40 @@
 [2025-11-04 17:48:33] CameraApplication:INFO:Disconnecting all cameras...
 [2025-11-04 17:48:34] CameraApplication:INFO:Camera 13251 disconnected.
 [2025-11-04 17:48:39] CameraApplication:INFO:Disconnecting all cameras...
+[2025-11-04 17:49:32] CameraApplication:INFO:Logging level set to DEBUG
+[2025-11-04 17:49:32] CameraApplication:INFO:Number of cameras detected: 1
+[2025-11-04 17:49:32] CameraApplication:INFO:Creating UI
+[2025-11-04 17:49:32] CameraApplication:INFO:Setting up camera status display
+[2025-11-04 17:49:32] CameraApplication:INFO:Setting up camera configuration tab
+[2025-11-04 17:49:37] CameraApplication:INFO:Connecting to all cameras...
+[2025-11-04 17:49:37] CameraApplication:INFO:Number of cameras detected: 1
+[2025-11-04 17:49:40] CameraApplication:INFO:Camera 13251 connected successfully.
+[2025-11-04 17:49:40] CameraApplication:INFO:Successfully identified camera 0
+[2025-11-04 17:49:40] CameraApplication:INFO:     Serial number: 13251
+[2025-11-04 17:49:40] CameraApplication:INFO:     Model: DU888_EXF
+[2025-11-04 17:49:40] CameraApplication:INFO:     Controller Mode: USB
+[2025-11-04 17:49:57] CameraApplication:INFO:Disconnecting all cameras...
+[2025-11-04 17:49:58] CameraApplication:INFO:Camera 13251 disconnected.
+[2025-11-04 17:50:00] CameraApplication:INFO:Disconnecting all cameras...
+[2025-11-04 17:50:10] CameraApplication:INFO:Logging level set to DEBUG
+[2025-11-04 17:50:10] CameraApplication:INFO:Number of cameras detected: 1
+[2025-11-04 17:50:10] CameraApplication:INFO:Creating UI
+[2025-11-04 17:50:10] CameraApplication:INFO:Setting up camera status display
+[2025-11-04 17:50:10] CameraApplication:INFO:Setting up camera configuration tab
+[2025-11-04 17:50:13] CameraApplication:INFO:Disconnecting all cameras...
+[2025-11-04 17:50:29] CameraApplication:INFO:Logging level set to DEBUG
+[2025-11-04 17:50:29] CameraApplication:INFO:Number of cameras detected: 1
+[2025-11-04 17:50:29] CameraApplication:INFO:Creating UI
+[2025-11-04 17:50:29] CameraApplication:INFO:Setting up camera status display
+[2025-11-04 17:50:29] CameraApplication:INFO:Setting up camera configuration tab
+[2025-11-04 17:50:31] CameraApplication:INFO:Connecting to all cameras...
+[2025-11-04 17:50:31] CameraApplication:INFO:Number of cameras detected: 1
+[2025-11-04 17:50:34] CameraApplication:INFO:Camera 13251 connected successfully.
+[2025-11-04 17:50:34] CameraApplication:INFO:Successfully identified camera 0
+[2025-11-04 17:50:34] CameraApplication:INFO:     Serial number: 13251
+[2025-11-04 17:50:34] CameraApplication:INFO:     Model: DU888_EXF
+[2025-11-04 17:50:34] CameraApplication:INFO:     Controller Mode: USB
+[2025-11-04 17:50:40] CameraApplication:INFO:Loaded config for camera 13251
+[2025-11-04 17:54:09] CameraApplication:INFO:Disconnecting all cameras...
+[2025-11-04 17:54:10] CameraApplication:INFO:Camera 13251 disconnected.
+[2025-11-04 17:54:12] CameraApplication:INFO:Disconnecting all cameras...
