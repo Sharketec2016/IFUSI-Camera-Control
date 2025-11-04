@@ -133,10 +133,7 @@ class CameraMonitorApp:
         self.logger = self._setup_logging(debugLogging)
         self.custom_font = Font(family="Helvetica", size=14, weight="bold")
         self.cam_config_options_json = cam_config_options_json
-        
-        # Initialize camera drivers: TODO Change this to the actual camera driver library.
-        # self.cameras = [self.camera1, self.camera2, self.camera3]#, self.camera4]
-        # self.cameras_dict = {}
+
         self.cameras = []
         self.__identify_cameras__()
         self.cameras_dict = {}
@@ -263,8 +260,6 @@ class CameraMonitorApp:
         self.save_btn = ttk.Button(self.button_frame, text="Save", command=self.save_data)
         self.save_btn.pack(side=tk.RIGHT, padx=5)
 
-
-
     def save_data(self):
         self.logger.info("Saving data")
         if self.has_run_experiment:
@@ -361,7 +356,7 @@ class CameraMonitorApp:
 
     def check_if_idx_connected_already(self, cam_index):
         for sn, cam in self.cameras_dict.items():
-            if cam.camIndex ==  cam_index:
+            if cam.is_opened():
                 return True
         return False
 
@@ -394,16 +389,14 @@ class CameraMonitorApp:
             num_cameras = self.__identify_cameras__() #This identifies the number of cameras connected.
             if num_cameras:
                 for i in range(num_cameras):
-                    cam = AndoriXonCamera()
                     if not self.check_if_idx_connected_already(i):
-                        if cam.connect(camIndex=i):
+                        cam = Camera(idx=i, temperature=-25, fan_mode='full', amp_mode=None);
+                        if cam.connection_status == CameraState.CONNECTED:
                             try:
-                                info = cam.cameraObj.get_device_info()
+                                info = cam.get_device_info()
                                 cam.serialNumber = str(info[2])
                                 cam.head_model = info[1]
                                 cam.controller_mode = info[0]
-                                cam.camIndex = i
-                                cam.camera_configuration(None)
                                 self.cameras.append(cam)
                                 self.cameras_dict.update( {cam.serialNumber: cam} )
 
@@ -412,13 +405,13 @@ class CameraMonitorApp:
                                 self.camera_status_labels[cam.serialNumber]["serial_label"].config(fg="green")
                                 self.logger.info(f"Camera {cam.serialNumber} connected successfully.")
 
-                                self.logger.info(f"Successfully identified camera {cam.camIndex}")
+                                self.logger.info(f"Successfully identified camera {cam.idx}")
                                 self.logger.info(f"     Serial number: {cam.serialNumber}")
                                 self.logger.info(f"     Model: {cam.head_model}")
                                 self.logger.info(f"     Controller Mode: {cam.controller_mode}")
                             except Exception as e:
                                 self.logger.error(f"Error connecting to camera at index {i}: {e}")
-                                cam.disconnect()
+                                cam.close()
                         else:
                             self.logger.error(f"Failed to connect to camera {cam.serialNumber}.")
                 self.update_UI_elements()
