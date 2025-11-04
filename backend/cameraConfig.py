@@ -222,49 +222,35 @@ class Camera(AndorSDK2Camera):
         :return: True or False on configuration
         '''
 
-        if (cameraDict is not None):
+        if (configDict is not None):
             self.cam_config = configDict
 
         elif(configDir is not None):
                 pass
         else:
-            amp_mode_defaults = {
-                'channel': 0, 'oamp': 1, 'hsspeed': 100, 'preamp': 200
-            }
-            if self.is_opened():
-                amp_modes = self.get_all_amp_modes()
-                if amp_modes:
-                    amp_mode_defaults = {
-                        'channel': amp_modes[0].channel,
-                        'oamp': amp_modes[0].oamp,
-                        'hsspeed': amp_modes[0].hsspeed,
-                        'preamp': amp_modes[0].preamp
-                    }
-
             configDict = {
                 'acquisitionMode': "kinetic",
                 'triggeringMode': 'int',
                 'readoutMode': 'image',
                 'exposureTime': 0.004,
                 'acquisitionNumber': 1,
-                'frameTransfer': True,
-                'verticalShift': {'shiftSpeed': 0.6, 'clockVoltageAmplitude': None},
-                'horizontalShift': {'readoutRate': '30 MHz', 'preAmpGain': 'Gain 1',
-                                    'outputAmp': 'Electron Multiplying'},
-                'baselineClamp': True,
-                'emGain': {'state': False, 'gainLevel': 0},
-                'shutterSettings': {'mode': 'open'},
+                'frameTransfer': "OFF",
+                'verticalShift': {'shiftSpeed': "0.6",
+                                  'clockVoltageAmplitude': "Normal"
+                                  },
+                'horizontalShift': {'readoutRate': '30 MHz',
+                                    'preAmpGain': 'Gain1',
+                                    'outputAmp': 'EM'
+                                    },
+                'baselineClamp': "OFF",
+                'emGain': {'state': "ON", 'gainLevel': 1},
+                'shutterSettings': {
+                    "InternalShutter" : "Open",
+                    "ExternalShutter" : "Open"
+                  },
                 'fanLevel': 'full',
-                'ampMode': amp_mode_defaults,
-                'temperatureSetpoint': 20
+                'temperatureSetpoint': -25
             }
-            configDict['acqconfiguration'] = {
-                'acqMode': 'kinetic',
-                'nframes': 10,
-                'overflowBehavior': 'restart'
-            }
-
-
         self.cam_config = configDict
         self.logger.info(f"Configuring camera {self.serialNumber} with config: {configDict}")
 
@@ -295,6 +281,8 @@ class Camera(AndorSDK2Camera):
                 else:
                     self.enable_frame_transfer_mode(enable=False)
 
+
+
                 self._configure_amp_mode(configDict=configDict)
                 self._configure_vsspeed(configDict=configDict)
                 self.set_temperature(int(configDict['temperatureSetpoint']))
@@ -306,6 +294,7 @@ class Camera(AndorSDK2Camera):
                 self.is_configured = CameraState.NOT_CONFIGURED
                 return False
         return True
+
 
     def _configure_amp_mode(self, configDict):
         channel = 0
@@ -340,10 +329,8 @@ class Camera(AndorSDK2Camera):
             self.set_vsspeed(all_speeds[2])
         elif(configDict['verticalShift']['shiftSpeed'] == '4.33'):
             self.set_vsspeed(all_speeds[3])
-        else
+        else:
             self.set_vsspeed(all_speeds[0])
-
-
 
     def get_camera_connetion_status(self):
         self.connection_status = CameraState.CONNECTED if self.is_opened() else CameraState.DISCONNECTED
