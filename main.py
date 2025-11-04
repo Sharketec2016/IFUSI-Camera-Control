@@ -24,6 +24,8 @@ import sys
 from pprint import pprint
 import json
 import pylablib.devices.Andor as Andor
+import numpy as np
+from time import sleep
 
 serial_numbers = ["13703", "12606", "12574"]
 save_data_path = ""

@@ -1,19 +1,28 @@
 -------------------------------------------
 Author: Matthew Buchkowski
-Date: October 25, 2024
-
+Department: Physics (Astronomy)
 -------------------------------------------
-This readme file contains all notes, information about pylablib and equipment/cameras, and project structure for the python programming to acquire images.
+# IFUSI Speckling Imaging
+The Integrated Field Unit Speckle Imager (IFUSI) is a next-generation speckle imaging instrument that combines a fiber-fed Integral Field Unit (IFU) with an array of four Andor iXon Ultra 888 EMCCD cameras.
+The fiber bundle acts as the IFU, dividing the telescope’s image into thousands of individual spatial elements (spaxels). Each fiber carries light from a small patch of the image into the spectrograph and cameras, allowing IFUSI to capture hyperspectral speckle data—images with full wavelength information across the field.
+
+Traditional two-channel speckle interferometers are limited to capturing narrow wavelength bands.
+By contrast, the IFU-based design in IFUSI significantly increases the spectral bandwidth and data richness, enabling the simultaneous capture of spatial and spectral information for every frame.
+
+This Python project provides a graphical user interface (GUI) for controlling up to N connected Andor cameras. Through the GUI, users can:
+1. Automatically detect and connect available cameras
+2. Configure individual camera settings
+3. Preview live video feeds from each camera
+4. Run full experimental data acquisitions and save results to disk
+
+Note
+This program is designed specifically for the Andor iXon Ultra 888 EMCCD cameras.
+Before running the GUI, you must install the appropriate Andor SDK and DLL libraries on the host system.
+These libraries are Windows-only — the DLLs are not compatible with Linux.
+You can obtain the latest SDK and driver package from:
+👉 https://andor.oxinst.com/downloads 
 
 
-Program Project Structure:
-1. Confirm that all necessary cameras are connected by comparing the unique serial numbers.
-            a. This method will be done first by quering how many cameras the program thinks are connected. After that, it will then run through a for loop and grab all of the serial numbers from each of the cameras and compare them against a global list. As long as the serial number is within this list, then the queried one should be within. Since time is not of a concern at this step, a simple O(n) search time is fine.
-
-2. If all cameras are connected, and registering, we then need to go one by one and configure them
-            a. NOTE: Dr Horch has mentioned that 4 cameras would be used in the normal experiment, but that a 5th camera could be added. This camera might have a different configuration than the other four.
-3. After configuration, and confirmation of settings, is set we need to perform the actual capture. These are also some extra settings that need to be defined
-4. After capture of each image, they need to be saved locally within a folder. Since a total of 4 (or 5) cameras will be used, 4\5 folders is needed. Each camera will save its images into a unique folder, where later someone can go through and post process.
 
 ## Creating a workable env
 To properly use the camera application, a suitable environment needs to be created first. It is recommended that Ananconda (conda) be used. Follow the steps below will result in a workable enviornment (env). 
@@ -26,16 +35,16 @@ To properly use the camera application, a suitable environment needs to be creat
     2. astropy - Package for data formatting, header creation, and data saving.
     3. pandas - Package for dataframe creation, data handling, and data saving.
     4. Use the command `conda install -c conda-forge pylablib`  - Contains all camera drivers for the iXon Andor cameras.
-    Note: All other packages used within the project should be included by default, or should aldready be installed along side the above packages automatically. If any missing dependency errors occur, install the missing packages/dependances accordingly. 
+    Note: All other packages used within the project should be included by default, or should already be installed along side the above packages automatically. If any missing dependency errors occur, install the missing packages/dependances accordingly. 
 4. Within the package populated env, run the command `python main.py` to launch the application. 
 
 ### Working with Python Env
 1. Install python 3.12 
 2. Within the project root directory run the command `python -m venv _name of env_`. 
 3. Once the env has been created, you should see a folder in the project root dir with the name of your env.
-4. Decend into your venv/bin to find the _activate_ file. Depending of your OS you will activate your env differently, but run either `source activate` or `./activate` or `activate` within the terminal
+4. Descend into your venv/bin to find the _activate_ file. Depending of your OS you will activate your env differently, but run either `source activate` or `./activate` or `activate` within the terminal
 5. Once the venv has been activated, ascend back into the root directory. Make sure you are not in the same dir as the _requirements.txt_ file. 
-6. run the command `pip install -r requirements.txt`. This will recusivly install all of the necessary packages for running the project. 
+6. run the command `pip install -r requirements.txt`. This will recursively install all the necessary packages for running the project. 
 
 
 Note: If you include the `-d` flag when executing the script, lower level debug log files will be created for increased resolution on camera handling. 

@@ -1048,3 +1048,12 @@
 [2025-11-03 16:53:14] CameraApplication:INFO:Setting up camera status display
 [2025-11-03 16:53:14] CameraApplication:INFO:Setting up camera configuration tab
 [2025-11-03 16:53:42] CameraApplication:INFO:Disconnecting all cameras...
+[2025-11-03 21:01:43] CameraApplication:INFO:Logging level set to DEBUG
+[2025-11-03 21:01:43] CameraApplication:INFO:Creating UI
+[2025-11-03 21:01:43] CameraApplication:INFO:Setting up camera status display
+[2025-11-03 21:01:43] CameraApplication:INFO:Setting up camera configuration tab
+[2025-11-03 21:02:04] CameraApplication:INFO:Disconnecting all cameras...
+[2025-11-03 21:52:36] CameraApplication:INFO:Logging level set to DEBUG
+[2025-11-03 21:52:36] CameraApplication:INFO:Creating UI
+[2025-11-03 21:52:36] CameraApplication:INFO:Setting up camera status display
+[2025-11-03 21:52:36] CameraApplication:INFO:Setting up camera configuration tab

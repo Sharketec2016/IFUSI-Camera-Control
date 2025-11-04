@@ -1,7 +1,4 @@
 from pylablib.devices import Andor
-import numpy as np
-import pandas as pd
-from time import sleep
 from astropy.io import fits
 import os
 from enum import Enum
@@ -65,10 +62,11 @@ class AndoriXonCamera:
 
     def configure_camera_settings(self, configDict = None):
         '''
-        :param cameraDict: A dictionary that contains two elements. 1. Camera OBJ, 2. Camera config dict
-        :return: True or False on configuration
+        Function to configure the camera will passed settings.
+        :param configDict:
+        :return:
         '''
-
+        self.is_configured = CameraState.NOT_CONFIGURED
         if(configDict is None):
             return False
         self.cam_config = configDict
@@ -77,8 +75,23 @@ class AndoriXonCamera:
         if self.cameraObj:
             if self.cameraObj.is_opened():
                 try:
+                    '''
+                    TODO need to investigate further the setting up of different modes of acquistion. The 
+                    documentation mentions that there are setup mode functions that can query back information 
+                    about the setup of that mode. For single it should be 
+                    setup_single_mode
+                    setup_kinetic_mode
+                    
+                    '''
                     self.cameraObj.set_fan_mode(mode=configDict['fanLevel'])
-                    self.cameraObj.set_acquisition_mode(mode = configDict['acquisitionMode'])
+                    if(configDict['acquisitionMode'].lower() == 'kinetic'):
+                        self.cameraObj.setup_kinetic_mode(num_cycle=configDict['KineticSeriesLength'],
+                                                          cycle_time=configDict['KineticCycleTime'],
+                                                          num_acc=configDict['acquisitionNumber']
+                                                          )
+                    else:
+                        self.cameraObj.set_acquisition_mode(mode = configDict['acquisitionMode'])
+
                     self.cameraObj.set_trigger_mode(mode = configDict['triggeringMode'])
                     self.cameraObj.set_read_mode(mode = configDict['readoutMode'])
                     self.cameraObj.set_exposure(exposure=configDict['exposureTime'])
@@ -90,24 +103,11 @@ class AndoriXonCamera:
                     elif(configDict['shutterSettings']['ExternalShutter'].lower() == 'close'):
                         self.cameraObj.setup_shutter(mode='close')
 
-
-                    if(configDict['acquisitionMode'].lower() == 'kinetic'):
-                        self.cameraObj.setup_kinetic_mode(num_cycle=configDict['KineticSeriesLength'],
-                                                          cycle_time=configDict['KineticCycleTime'],
-                                                          num_acc=configDict['acquisitionNumber']
-                                                          )
-
                     if(configDict['frameTransfer'].lower() == 'on'):
                         self.cameraObj.enable_frame_transfer_mode(enable=True)
                     else:
                         self.cameraObj.enable_frame_transfer_mode(enable=False)
 
-                    # self.cameraObj.setup_image_mode() #letting default values be passed
-                    # self.cameraObj.set_amp_mode(channel = configDict['ampMode']['channel'],
-                    #                     oamp = configDict['ampMode']['oamp'],
-                    #                     hsspeed = configDict['ampMode']['hsspeed'],
-                    #                     preamp = configDict['ampMode']['preamp']
-                    #                     )
                     self._configure_amp_mode(configDict)
                     self.cameraObj.set_vsspeed(configDict['verticalShift']['shiftSpeed'])
                     self.cameraObj.set_temperature(configDict['temperatureSetpoint'])
@@ -117,18 +117,18 @@ class AndoriXonCamera:
                     return True
                 except Exception as e:
                     self.logger.error(f"Camera {self.serialNumber} configuration failed: {e}")
-                    self.is_configured = CameraState.NOT_CONFIGURED
+
                     return False
         return False
 
     def _configure_amp_mode(self, configDict):
+        #TODO need to finish this method
         channel = configDict['ampMode']['channel']
         oamp = configDict['ampMode']['oamp']
         hsspeed = configDict['ampMode']['hsspeed']
         preamp = configDict['ampMode']['preamp']
 
-        # if(channel == 1):
-        #
+
     
     def acquistion_configuration(self, cameraDict):
         acqDict = cameraDict['acqconfiguration']
@@ -137,7 +137,7 @@ class AndoriXonCamera:
 
     def connect(self, camIndex):
         try:
-            self.cameraObj = Andor.AndorSDK2Camera(idx=camIndex, temperature=None, fan_mode='full', amp_mode=None)
+            self.cameraObj = Andor.AndorSDK2Camera(idx=camIndex, temperature=-25, fan_mode='full', amp_mode=None)
             if self.cameraObj.is_opened():
                 self.is_connected = CameraState.CONNECTED
                 self.logger.info(f"Camera {self.serialNumber} is connected")
