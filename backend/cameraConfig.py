@@ -182,7 +182,7 @@ class Camera(AndorSDK2Camera):
         self.cam_config = None
         self.head_model = None
         self.controller_mode = None
-
+        self.temperature_setpoint = None
         self.connection_status = CameraState.CONNECTED if self.is_opened() else CameraState.DISCONNECTED
         self.is_in_acquisition = CameraState.NOT_ACQUIRING
         self.is_configured = CameraState.NOT_CONFIGURED
@@ -285,7 +285,10 @@ class Camera(AndorSDK2Camera):
 
                 self._configure_amp_mode(configDict=configDict)
                 self._configure_vsspeed(configDict=configDict)
+
                 self.set_temperature(int(configDict['temperatureSetpoint']))
+                self.temperature_setpoint = int(configDict['temperatureSetpoint'])
+
                 self.is_configured = CameraState.CONFIGURED
                 self.logger.info(f"Camera {self.serialNumber} configured successfully")
                 return True

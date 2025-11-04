@@ -1,5 +1,6 @@
 /backend/logs
 venv/
 Test photos and videos/*
-!venv/Lib/site-packages/pylablib/devices/Andor/
-!venv/Lib/site-packages/pylablib/devices/Andor/**
+
+
+
