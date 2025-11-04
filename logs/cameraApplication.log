@@ -884,60 +884,6 @@
 [2025-10-13 17:53:18] CameraApplication:INFO:Camera 12574 disconnected.
 [2025-10-13 17:53:18] CameraApplication:INFO:Camera 12606 disconnected.
 [2025-10-13 17:53:20] CameraApplication:INFO:Disconnecting all cameras...
-[2025-11-04 16:55:58] CameraApplication:INFO:Logging level set to DEBUG
-[2025-11-04 16:55:58] CameraApplication:INFO:Creating UI
-[2025-11-04 16:55:58] CameraApplication:INFO:Setting up camera status display
-[2025-11-04 16:55:58] CameraApplication:INFO:Setting up camera configuration tab
-[2025-11-04 16:56:00] CameraApplication:INFO:Connecting to all cameras...
-[2025-11-04 16:56:14] CameraApplication:INFO:Disconnecting all cameras...
-[2025-11-04 16:56:45] CameraApplication:INFO:Logging level set to DEBUG
-[2025-11-04 16:56:54] CameraApplication:INFO:Creating UI
-[2025-11-04 16:56:54] CameraApplication:INFO:Setting up camera status display
-[2025-11-04 16:56:54] CameraApplication:INFO:Setting up camera configuration tab
-[2025-11-04 16:57:48] CameraApplication:INFO:Logging level set to DEBUG
-[2025-11-04 16:57:48] CameraApplication:INFO:Number of cameras detected: 1
-[2025-11-04 16:57:48] CameraApplication:INFO:Creating UI
-[2025-11-04 16:57:48] CameraApplication:INFO:Setting up camera status display
-[2025-11-04 16:57:48] CameraApplication:INFO:Setting up camera configuration tab
-[2025-11-04 16:57:51] CameraApplication:INFO:Connecting to all cameras...
-[2025-11-04 16:57:51] CameraApplication:INFO:Number of cameras detected: 1
-[2025-11-04 16:57:54] CameraApplication:ERROR:Failed to connect to camera None.
-[2025-11-04 16:58:03] CameraApplication:INFO:Disconnecting all cameras...
-[2025-11-04 16:58:44] CameraApplication:INFO:Logging level set to DEBUG
-[2025-11-04 16:58:44] CameraApplication:INFO:Number of cameras detected: 1
-[2025-11-04 16:58:44] CameraApplication:INFO:Creating UI
-[2025-11-04 16:58:44] CameraApplication:INFO:Setting up camera status display
-[2025-11-04 16:58:44] CameraApplication:INFO:Setting up camera configuration tab
-[2025-11-04 16:58:47] CameraApplication:INFO:Connecting to all cameras...
-[2025-11-04 16:58:47] CameraApplication:INFO:Number of cameras detected: 1
-[2025-11-04 16:59:44] CameraApplication:INFO:Logging level set to DEBUG
-[2025-11-04 16:59:44] CameraApplication:INFO:Number of cameras detected: 1
-[2025-11-04 16:59:44] CameraApplication:INFO:Creating UI
-[2025-11-04 16:59:44] CameraApplication:INFO:Setting up camera status display
-[2025-11-04 16:59:45] CameraApplication:INFO:Setting up camera configuration tab
-[2025-11-04 16:59:47] CameraApplication:INFO:Connecting to all cameras...
-[2025-11-04 16:59:47] CameraApplication:INFO:Number of cameras detected: 1
-[2025-11-04 17:01:10] CameraApplication:INFO:Logging level set to DEBUG
-[2025-11-04 17:01:10] CameraApplication:INFO:Number of cameras detected: 1
-[2025-11-04 17:01:10] CameraApplication:INFO:Creating UI
-[2025-11-04 17:01:10] CameraApplication:INFO:Setting up camera status display
-[2025-11-04 17:01:10] CameraApplication:INFO:Setting up camera configuration tab
-[2025-11-04 17:01:12] CameraApplication:INFO:Connecting to all cameras...
-[2025-11-04 17:01:12] CameraApplication:INFO:Number of cameras detected: 1
-[2025-11-04 17:01:47] CameraApplication:INFO:Camera 13251 connected successfully.
-[2025-11-04 17:01:48] CameraApplication:INFO:Successfully identified camera 0
-[2025-11-04 17:01:49] CameraApplication:INFO:     Serial number: 13251
-[2025-11-04 17:01:49] CameraApplication:INFO:     Model: DU888_EXF
-[2025-11-04 17:01:50] CameraApplication:INFO:     Controller Mode: USB
-[2025-11-04 17:02:32] CameraApplication:INFO:Loaded config for camera 13251
-[2025-11-04 17:02:35] CameraApplication:INFO:Saved updated config for camera 13251
-[2025-11-04 17:02:44] CameraApplication:INFO:Saved updated config for camera 13251
-[2025-11-04 17:03:29] CameraApplication:INFO:Saved updated config for camera 13251
-[2025-11-04 17:03:36] CameraApplication:INFO:Disconnecting all cameras...
-[2025-11-04 17:03:37] CameraApplication:INFO:Camera 13251 disconnected.
-[2025-11-04 17:03:39] CameraApplication:INFO:Disconnecting all cameras...
-[2025-11-04 17:10:43] CameraApplication:INFO:Logging level set to DEBUG
-[2025-11-04 17:10:43] CameraApplication:INFO:Number of cameras detected: 1
-[2025-11-04 17:10:43] CameraApplication:INFO:Creating UI
-[2025-11-04 17:10:43] CameraApplication:INFO:Setting up camera status display
-[2025-11-04 17:10:43] CameraApplication:INFO:Setting up camera configuration tab
+[2025-11-03 22:17:30] CameraApplication:INFO:Logging level set to DEBUG
+[2025-11-03 22:17:30] CameraApplication:INFO:Creating UI
+[2025-11-03 22:17:30] CameraApplication:INFO:Setting up camera status display

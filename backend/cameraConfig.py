@@ -1,11 +1,7 @@
 import json
-
+from pprint import pprint
 from pylablib.devices import Andor
 from pylablib.devices.Andor import AndorSDK2Camera
-import numpy as np
-import pandas as pd
-from time import sleep
-from astropy.io import fits
 import os
 from enum import Enum
 import logging as log
@@ -119,24 +115,35 @@ class Camera(AndorSDK2Camera):
 
         if self.is_opened():
             try:
+
+                '''
+                It appears that there are specific "modes" for the amplifier and preamp. 
+                Only those modes can be set and will work. As such we need to specify to the user which mode 
+                they can choose from. 
+                '''
+
+
                 self.set_fan_mode(mode=configDict['fanLevel'])
-                self.set_acquisition_mode(mode=configDict['acquisitionMode'])
+                if (configDict['acquisitionMode'].lower() == 'kinetic'):
+                    self.setup_kinetic_mode(num_cycle=configDict['KineticSeriesLength'],
+                                            cycle_time=configDict['KineticCycleTime'],
+                                            num_acc=configDict['acquisitionNumber']
+                                            )
+                else:
+                    self.set_acquisition_mode(mode=configDict['acquisitionMode'])
+
                 self.set_trigger_mode(mode=configDict['triggeringMode'])
                 self.set_read_mode(mode=configDict['readoutMode'])
                 self.set_exposure(exposure=configDict['exposureTime'])
-                self.set_EMCCD_gain(gain=configDict['emGain']['gainLevel'])
+                self.set_EMCCD_gain(gain=configDict['emGain']['gainLevel'], advanced=False)
                 if (configDict['shutterSettings']['ExternalShutter'].lower() == 'fullauto'):
                     self.setup_shutter(mode='auto')
                 elif (configDict['shutterSettings']['ExternalShutter'].lower() == 'open'):
                     self.setup_shutter(mode='open')
                 elif (configDict['shutterSettings']['ExternalShutter'].lower() == 'close'):
-                    self.setup_shutter(mode='close')
+                    self.setup_shutter(mode='closed')
 
-                if (configDict['acquisitionMode'].lower() == 'kinetic'):
-                    self.setup_kinetic_mode(num_cycle=configDict['KineticSeriesLength'],
-                                                      cycle_time=configDict['KineticCycleTime'],
-                                                      num_acc=configDict['acquisitionNumber']
-                                                      )
+
 
                 if (configDict['frameTransfer'].lower() == 'on'):
                     self.enable_frame_transfer_mode(enable=True)
@@ -151,6 +158,7 @@ class Camera(AndorSDK2Camera):
                 self.set_temperature(int(configDict['temperatureSetpoint']))
                 self.temperature_setpoint = int(configDict['temperatureSetpoint'])
 
+
                 self.is_configured = CameraState.CONFIGURED
                 self.logger.info(f"Camera {self.serialNumber} configured successfully")
                 return True
@@ -161,42 +169,50 @@ class Camera(AndorSDK2Camera):
         self.is_configured = CameraState.NOT_CONFIGURED
         return False
 
-
     def _configure_amp_mode(self, configDict):
+        configured_amp = False
         channel = 0
         oamp = 0 if configDict['horizontalShift']['outputAmp'] is "EM" else 1
         preamp = 0 if configDict['horizontalShift']['preAmpGain'] is "Gain1" else 1
-        if(configDict['horizontalShift']['readoutRate'] == "30MHz"):
+
+        readout_rate = configDict['horizontalShift']['readoutRate'].replace(" ", "").lower()
+        if readout_rate == "30mhz":
             hsspeed = 0
-        elif (configDict['horizontalShift']['readoutRate'] == "20MHz"):
+        elif readout_rate == "20mhz":
             hsspeed = 1
-        elif(configDict['horizontalShift']['readoutRate'] == "10MHz"):
+        elif readout_rate == "10mhz":
             hsspeed = 2
-        elif(configDict['horizontalShift']['readoutRate'] == "1MHz"):
+        elif readout_rate == "1mhz":
             hsspeed = 3
         else:
             hsspeed = 0
 
-
-        self.set_amp_mode(
-            channel=channel,
-            oamp = oamp,
-            hsspeed = hsspeed,
-            preamp = preamp
-        )
+        #now that we have all of the settings. We need to find the mode that matches this
+        for mode in self.get_all_amp_modes():
+            if mode.channel == channel and mode.oamp == oamp and mode.hsspeed == hsspeed and mode.preamp == preamp:
+                self.set_amp_mode(
+                    channel=mode.channel,
+                    oamp = mode.oamp,
+                    hsspeed = mode.hsspeed,
+                    preamp = mode.preamp
+                )
+                configured_amp = True
+        if not configured_amp:          #backup incase we were unsuccessful in configuring the amp for the camera
+            self.init_amp_mode(mode = self.get_all_amp_modes()[8])
+            self.logger.error(f"Camera {self.serialNumber} amplifier was not manually configured correctly. Setting amp to default conventional setting")
 
     def _configure_vsspeed(self, configDict):
         all_speeds = self.get_all_vsspeeds()
         if(configDict['verticalShift']['shiftSpeed'] == '0.6'):
-            self.set_vsspeed(all_speeds[0])
+            self.set_vsspeed(0)
         elif(configDict['verticalShift']['shiftSpeed'] == '1.13'):
-            self.set_vsspeed(all_speeds[1])
+            self.set_vsspeed(1)
         elif(configDict['verticalShift']['shiftSpeed'] == '2.2'):
-            self.set_vsspeed(all_speeds[2])
+            self.set_vsspeed(2)
         elif(configDict['verticalShift']['shiftSpeed'] == '4.33'):
-            self.set_vsspeed(all_speeds[3])
+            self.set_vsspeed(3)
         else:
-            self.set_vsspeed(all_speeds[0])
+            self.set_vsspeed(0)
 
     def get_camera_connetion_status(self):
         self.connection_status = CameraState.CONNECTED if self.is_opened() else CameraState.DISCONNECTED
@@ -204,4 +220,9 @@ class Camera(AndorSDK2Camera):
     def get_acquisition_status(self):
         self.is_in_acquisition = CameraState.ACQUIRING if self.get_status() == "acquiring" else CameraState.NOT_ACQUIRING
         return self.is_in_acquisition
+
+    def full_camera_info(self):
+        pprint(self.get_full_info(include = 'all'))
+        pprint(self.get_full_status(include = 'all'))
+        pprint(self.get_settings(include = 'all'))
 
