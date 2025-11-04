@@ -1,4 +1,8 @@
 from pylablib.devices import Andor
+from pylablib.devices.Andor import AndorSDK2Camera
+import numpy as np
+import pandas as pd
+from time import sleep
 from astropy.io import fits
 import os
 from enum import Enum
@@ -181,3 +185,32 @@ class AndoriXonCamera:
             logger.addHandler(handler)
         return logger
 
+class Camera(AndorSDK2Camera):
+    def __init__(self, idx, temperature=None, fan_mode='full', amp_mode=None):
+        super().__init__(idx=idx, temperature=temperature, fan_mode=fan_mode, amp_mode=amp_mode)
+        self.serialNumber = None
+        self.cam_config = None
+        self.head_model = None
+        self.controller_mode = None
+
+        self.connection_status = CameraState.DISCONNECTED if self.is_opened() else CameraState.CONNECTED
+        self.is_in_acquisition = CameraState.NOT_ACQUIRING
+        self.is_configured = CameraState.NOT_CONFIGURED
+        self.logger = self.setup_logging()  # for now implement the logging feature automatically. we might want to change that later if it takes up too much time.
+
+
+    def setup_logging(self):
+        logger = log.getLogger(f"Camera-{self.serialNumber}")
+        logger.setLevel(log.DEBUG)
+
+        if not logger.handlers:
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            if not os.path.exists(f"{dir_path}/logs"):
+                os.makedirs(f"{dir_path}/logs")
+            save_path = f"{dir_path}/logs"
+            handler = log.FileHandler(f'{save_path}/camera_{self.serialNumber}.log')
+            handler.setLevel(log.DEBUG)
+            formatter = log.Formatter('[%(asctime)s] %(name)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+        return logger
