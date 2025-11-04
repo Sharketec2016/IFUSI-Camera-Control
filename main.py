@@ -700,6 +700,145 @@ class CameraMonitorApp:
             self.logger.error(f"Error loading notes: {e}")
             messagebox.showerror("Error", f"Failed to load notes:\n{e}")
 
+
+
+    def setup_config_options(self):
+        """Setup the camera configuration options"""
+        # Title label
+        config_title = ttk.Label(self.config_frame, text="Camera Configuration", font=("Arial", 14, "bold"))
+        config_title.pack(pady=10)
+        
+        # Camera selection frame
+        selection_frame = ttk.Frame(self.config_frame)
+        selection_frame.pack(fill=tk.X, padx=20, pady=10)
+        
+        ttk.Label(selection_frame, text="Select Camera:").pack(side=tk.LEFT, padx=5)
+        
+        # Camera selection combobox
+        self.selected_camera = tk.StringVar()
+        camera_select = ttk.Combobox(selection_frame, textvariable=self.selected_camera)
+        camera_select['values'] = self.camera_serials
+        camera_select.current(0)
+        camera_select.pack(side=tk.LEFT, padx=5)
+        camera_select.bind('<<ComboboxSelected>>', self._update_config_display)
+        
+        #Update Settings button
+        self.update_button = ttk.Button(selection_frame, text="Update Settings", command=lambda: self.update_config_options(serialNumber=self.selected_camera.get()))
+        self.update_button.pack(side=tk.LEFT, padx=5)
+        
+        self.config_canvas = tk.Canvas(self.config_frame)
+        self.config_canvas.pack(side="left", fill="both", expand=True)
+        
+        self.config_scrollbar = ttk.Scrollbar(self.config_frame, orient="vertical", command=self.config_canvas.yview)
+        self.config_scrollbar.pack(side="right", fill="y")
+        self.config_canvas.configure(yscrollcommand=self.config_scrollbar.set)
+        self.config_canvas.bind('<Configure>', lambda e: self.config_canvas.configure(scrollregion=self.config_canvas.bbox("all")))
+        self.scrollable_frame = ttk.Frame(self.config_canvas)
+        
+        self.config_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        
+        self.config_left_frame = ttk.Frame(self.scrollable_frame, padding=10) #this will contain the entry boxes for users to put values
+        self.config_right_frame = ttk.Frame(self.scrollable_frame, padding=10) #this will show the current values for the camera configs.
+        self.config_left_frame.pack(side="left", fill="both", expand=True)
+        self.config_right_frame.pack(side="right", fill="both", expand=True)
+
+        self.current_settings = ttk.Label(self.config_left_frame, text="Current Settings", font=self.custom_font)
+        self.current_settings.grid(row=0, column=7, padx=(135, 1), pady=5)
+
+        i = 1
+        for key, value in self.exampleConfig.items():
+            if type(value) is dict:
+                tmp_label = ttk.Label(self.config_left_frame, text=f"{key}", font=self.custom_font)
+                tmp_label.grid(row=i, column=0, sticky="w", padx=2, pady=2)
+                i+=1
+                for k2, v2 in value.items():
+
+                    tmp2_label = ttk.Label(self.config_left_frame, text=f"{k2}", font=self.custom_font)
+                    tmp2_label.grid(row=i, column=2, sticky="w", padx=0, pady=2)
+
+                    curr_label = ttk.Label(self.config_left_frame, text=f"{v2}", font=self.custom_font)
+                    curr_label.grid(row=i, column=7, sticky="w", padx=(135, 1), pady=2)
+
+                    var = tk.StringVar(value=str(v2))
+                    dropdown_values = self.cam_config_options_json[key][k2]
+                        
+                    widget = ttk.Combobox(self.config_left_frame, textvariable=var, values=dropdown_values, width=18)
+                    widget.grid(row=i, column=3, padx=35, pady=2, sticky="w")
+
+                    try:
+                        # store label, widget and var
+                        self.config_labels_dict[key].update({k2: curr_label})
+                        self.config_entrys_dict[key].update({k2: widget})
+                        self.config_vars.setdefault(key, {})[k2] = var
+                    except Exception:
+                        self.config_labels_dict.update({key: {k2: curr_label}})
+                        self.config_entrys_dict.update({key: {k2: widget}})
+                        self.config_vars.update({key: {k2: var}})
+
+                    i+=1
+            else:
+                tmp_label = ttk.Label(self.config_left_frame, text=f"{key}", font=self.custom_font)
+                tmp_label.grid(row=i, column=0, sticky="w", padx=5, pady=2)
+
+                curr_label = ttk.Label(self.config_left_frame, text=f"{value}", font=self.custom_font)
+                curr_label.grid(row=i, column=7, sticky="w", padx=(135, 1), pady=2)
+
+                var = tk.StringVar(value=str(value))
+                dropdown_values = self.cam_config_options_json[key]
+                    
+                widget = ttk.Combobox(self.config_left_frame, textvariable=var, values=dropdown_values, width=18)
+                widget.grid(row=i, column=3, padx=35, pady=2, sticky="w")
+
+                try:
+                    self.config_labels_dict[key] = curr_label
+                    self.config_entrys_dict[key] = widget
+                    self.config_vars[key] = var
+                except Exception:
+                    self.config_labels_dict.update({key: curr_label})
+                    self.config_entrys_dict.update({key: widget})
+                    self.config_vars.update({key: var})
+            i+=1
+        self._update_config_display()
+
+    def _update_config_display(self, event=None):
+        serialNumber = self.selected_camera.get()
+        if not serialNumber or serialNumber not in self.cameras_dict:
+            return # No camera selected or camera not found
+
+        camera = self.cameras_dict[serialNumber]
+        if not hasattr(camera, 'cam_config') or not camera.cam_config:
+            if camera.is_connected == CameraState.CONNECTED:
+                camera.camera_configuration() # Create a default config if it doesn't exist
+
+        config = camera.cam_config
+
+        for key, value in config.items():
+            if isinstance(value, dict):
+                for k2, v2 in value.items():
+                    if key in self.config_vars and k2 in self.config_vars[key]:
+                        self.config_vars[key][k2].set(v2)
+                    if key in self.config_labels_dict and k2 in self.config_labels_dict[key]:
+                        self.config_labels_dict[key][k2].config(text=str(v2))
+            else:
+                if key in self.config_vars:
+                    self.config_vars[key].set(value)
+                if key in self.config_labels_dict:
+                    self.config_labels_dict[key].config(text=str(value))
+                    self.config_labels_dict[key][k2].config(text=new_val)
+                    self.cameras_dict[serialNumber].cam_config[key][k2] = new_val
+            # else:
+            #     try:
+            #         var = self.config_vars.get(key, None)
+            #         if var is not None and not isinstance(var, dict):
+            #             new_val = var.get()
+            #         else:
+            #             new_val = self.config_entrys_dict[key].get()
+            #     except Exception:
+            #         new_val = self.config_entrys_dict[key].get()
+
+                self.config_labels_dict[key].config(text=new_val)
+                self.cameras_dict[serialNumber].cam_config[key] = new_val
+
     def setup_preview_options(self):
         """Setup the camera preview options with live streaming inside the preview_frame"""
 
