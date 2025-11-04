@@ -118,7 +118,7 @@ class CameraWorker:
     def _handle_configure(self, settings):
         """Handle camera configuration"""
         try:
-            self.camera.configure_camera_settings(settings)
+            self.camera.camera_configuration(settings)
         except Exception as e:
             print(f"Error configuring camera {self.camera.serialNumber}: {e}")
 
@@ -160,6 +160,7 @@ class CameraMonitorApp:
         self.config_dir = os.path.join(os.getcwd(), "configs")
         os.makedirs(self.config_dir, exist_ok=True)
         self.create_ui()
+        self.checking_connected_cams_temp()
         # self.check_camera_conection()
 
     def __identify_cameras__(self):
@@ -470,7 +471,7 @@ class CameraMonitorApp:
         self._populate_config_fields_from_dict(cam_cfg)
 
         #update the selected camera with the config settings
-        self.cameras_dict[serial].configure_camera_settings(configDict = cam_cfg)
+        self.cameras_dict[serial].camera_configuration(configDict = cam_cfg)
         if(self.cameras_dict[serial].is_configured != CameraState.CONFIGURED):
             self._display_camera_config_text(f"ERROR: Camera {serial} was not configured upon selection. Please continue with camera configuration.")
         else:
@@ -1134,7 +1135,7 @@ class CameraMonitorApp:
         
         for camera in self.cameras:
             try:    
-                camera.configure_camera_settings()
+                camera.camera_configuration()
                 # camera.acquisition_configuration()
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to configure camera {camera.serialNumber}: {str(e)}")
@@ -1223,6 +1224,14 @@ class CameraMonitorApp:
 
         # Schedule the next check in 2 seconds (2000 ms)
         self.root.after(ms=2000, func=self.check_camera_conection)
+
+
+    def checking_connected_cams_temp(self):
+        for serial, cam in self.cameras_dict.items():
+            print(f"Current temperature: {cam.get_temperature():.2f} C | Setpoint: {cam.get_temperature_setpoint():.2f} C")
+
+        self.root.after(ms=2000, func=self.checking_connected_cams_temp)
+
 
 def main():
     args = sys.argv #pass in command line arguments.
