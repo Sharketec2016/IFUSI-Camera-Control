@@ -132,10 +132,7 @@ class CameraMonitorApp:
         self.logger = self._setup_logging(debugLogging)
         self.custom_font = Font(family="Helvetica", size=14, weight="bold")
         self.cam_config_options_json = cam_config_options_json
-        
-        # Initialize camera drivers: TODO Change this to the actual camera driver library.
-        # self.cameras = [self.camera1, self.camera2, self.camera3]#, self.camera4]
-        # self.cameras_dict = {}
+
         self.cameras = []
         self.__identify_cameras__()
         self.cameras_dict = {}
@@ -336,7 +333,7 @@ class CameraMonitorApp:
 
     def check_if_idx_connected_already(self, cam_index):
         for sn, cam in self.cameras_dict.items():
-            if cam.camIndex ==  cam_index:
+            if cam.is_opened():
                 return True
         return False
 
@@ -590,15 +587,14 @@ class CameraMonitorApp:
             num_cameras = self.__identify_cameras__() #This identifies the number of cameras connected.
             if num_cameras:
                 for i in range(num_cameras):
-                    cam = AndoriXonCamera()
                     if not self.check_if_idx_connected_already(i):
-                        if cam.connect(camIndex=i):
+                        cam = Camera(idx=i, temperature=-25, fan_mode='full', amp_mode=None);
+                        if cam.connection_status == CameraState.CONNECTED:
                             try:
-                                info = cam.cameraObj.get_device_info()
+                                info = cam.get_device_info()
                                 cam.serialNumber = str(info[2])
                                 cam.head_model = info[1]
                                 cam.controller_mode = info[0]
-                                cam.camIndex = i
                                 self.cameras.append(cam)
                                 self.cameras_dict.update( {cam.serialNumber: cam} )
 
@@ -607,13 +603,13 @@ class CameraMonitorApp:
                                 self.camera_status_labels[cam.serialNumber]["serial_label"].config(fg="green")
                                 self.logger.info(f"Camera {cam.serialNumber} connected successfully.")
 
-                                self.logger.info(f"Successfully identified camera {cam.camIndex}")
+                                self.logger.info(f"Successfully identified camera {cam.idx}")
                                 self.logger.info(f"     Serial number: {cam.serialNumber}")
                                 self.logger.info(f"     Model: {cam.head_model}")
                                 self.logger.info(f"     Controller Mode: {cam.controller_mode}")
                             except Exception as e:
                                 self.logger.error(f"Error connecting to camera at index {i}: {e}")
-                                cam.disconnect()
+                                cam.close()
                         else:
                             self.logger.error(f"Failed to connect to camera {cam.serialNumber}.")
                 self.update_UI_elements()
@@ -627,13 +623,13 @@ class CameraMonitorApp:
         self.logger.info("Disconnecting all cameras...")
         serials = list(self.cameras_dict.keys())
         for serial in serials:
-            cam = self.cameras_dict.pop(serial)
+            cam = self.cameras_dict[serial]
             try:
                 if cam.disconnect():
                     self.camera_status_labels[serial]["status_label"].config(text="Disconnected", foreground="black")
                     self.camera_status_labels[serial]["serial_label"].config(fg="red")
                     self.logger.info(f"Camera {serial} disconnected.")
-                    # self.cameras_dict.pop(serial)
+                    self.cameras_dict.pop(serial)
                 else:
                     self.camera_status_labels[serial]["status_label"].config(text="Error", foreground="black")
                     self.camera_status_labels[serial]["serial_label"].config(fg="red")
@@ -641,6 +637,8 @@ class CameraMonitorApp:
                 self.camera_status_labels[serial]["status_label"].config(text="Error", fg="red")
                 self.logger.error(f"Error disconnecting from camera {serial}: {e}")
         self.update_UI_elements()
+
+
 
     def save_fits_header(self):
         """Save the content of the notes text area to a file."""
@@ -697,24 +695,131 @@ class CameraMonitorApp:
             # Log the error and show an error message
             self.logger.error(f"Error loading notes: {e}")
             messagebox.showerror("Error", f"Failed to load notes:\n{e}")
-    
-    def save_values(self):
-        serialNumber = self.selected_camera.get()
-        # self.config_serial_number = serialNumber
-        configDict = self.cameras_dict[serialNumber].cam_config
-        for key, value in configDict.items():
-            if type(value) == dict:
-                for k2, v2 in value.items():
-                    # prefer variable-backed values if available
-                    try:
-                        var = self.config_vars.get(key, {}).get(k2, None)
-                        if var is not None:
-                            new_val = var.get()
-                        else:
-                            new_val = self.config_entrys_dict[key][k2].get()
-                    except Exception:
-                        new_val = self.config_entrys_dict[key][k2].get()
 
+
+
+    def setup_config_options(self):
+        """Setup the camera configuration options"""
+        # Title label
+        config_title = ttk.Label(self.config_frame, text="Camera Configuration", font=("Arial", 14, "bold"))
+        config_title.pack(pady=10)
+        
+        # Camera selection frame
+        selection_frame = ttk.Frame(self.config_frame)
+        selection_frame.pack(fill=tk.X, padx=20, pady=10)
+        
+        ttk.Label(selection_frame, text="Select Camera:").pack(side=tk.LEFT, padx=5)
+        
+        # Camera selection combobox
+        self.selected_camera = tk.StringVar()
+        camera_select = ttk.Combobox(selection_frame, textvariable=self.selected_camera)
+        camera_select['values'] = self.camera_serials
+        camera_select.current(0)
+        camera_select.pack(side=tk.LEFT, padx=5)
+        camera_select.bind('<<ComboboxSelected>>', self._update_config_display)
+        
+        #Update Settings button
+        self.update_button = ttk.Button(selection_frame, text="Update Settings", command=lambda: self.update_config_options(serialNumber=self.selected_camera.get()))
+        self.update_button.pack(side=tk.LEFT, padx=5)
+        
+        self.config_canvas = tk.Canvas(self.config_frame)
+        self.config_canvas.pack(side="left", fill="both", expand=True)
+        
+        self.config_scrollbar = ttk.Scrollbar(self.config_frame, orient="vertical", command=self.config_canvas.yview)
+        self.config_scrollbar.pack(side="right", fill="y")
+        self.config_canvas.configure(yscrollcommand=self.config_scrollbar.set)
+        self.config_canvas.bind('<Configure>', lambda e: self.config_canvas.configure(scrollregion=self.config_canvas.bbox("all")))
+        self.scrollable_frame = ttk.Frame(self.config_canvas)
+        
+        self.config_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        
+        self.config_left_frame = ttk.Frame(self.scrollable_frame, padding=10) #this will contain the entry boxes for users to put values
+        self.config_right_frame = ttk.Frame(self.scrollable_frame, padding=10) #this will show the current values for the camera configs.
+        self.config_left_frame.pack(side="left", fill="both", expand=True)
+        self.config_right_frame.pack(side="right", fill="both", expand=True)
+
+        self.current_settings = ttk.Label(self.config_left_frame, text="Current Settings", font=self.custom_font)
+        self.current_settings.grid(row=0, column=7, padx=(135, 1), pady=5)
+
+        i = 1
+        for key, value in self.exampleConfig.items():
+            if type(value) is dict:
+                tmp_label = ttk.Label(self.config_left_frame, text=f"{key}", font=self.custom_font)
+                tmp_label.grid(row=i, column=0, sticky="w", padx=2, pady=2)
+                i+=1
+                for k2, v2 in value.items():
+
+                    tmp2_label = ttk.Label(self.config_left_frame, text=f"{k2}", font=self.custom_font)
+                    tmp2_label.grid(row=i, column=2, sticky="w", padx=0, pady=2)
+
+                    curr_label = ttk.Label(self.config_left_frame, text=f"{v2}", font=self.custom_font)
+                    curr_label.grid(row=i, column=7, sticky="w", padx=(135, 1), pady=2)
+
+                    var = tk.StringVar(value=str(v2))
+                    dropdown_values = self.cam_config_options_json[key][k2]
+                        
+                    widget = ttk.Combobox(self.config_left_frame, textvariable=var, values=dropdown_values, width=18)
+                    widget.grid(row=i, column=3, padx=35, pady=2, sticky="w")
+
+                    try:
+                        # store label, widget and var
+                        self.config_labels_dict[key].update({k2: curr_label})
+                        self.config_entrys_dict[key].update({k2: widget})
+                        self.config_vars.setdefault(key, {})[k2] = var
+                    except Exception:
+                        self.config_labels_dict.update({key: {k2: curr_label}})
+                        self.config_entrys_dict.update({key: {k2: widget}})
+                        self.config_vars.update({key: {k2: var}})
+
+                    i+=1
+            else:
+                tmp_label = ttk.Label(self.config_left_frame, text=f"{key}", font=self.custom_font)
+                tmp_label.grid(row=i, column=0, sticky="w", padx=5, pady=2)
+
+                curr_label = ttk.Label(self.config_left_frame, text=f"{value}", font=self.custom_font)
+                curr_label.grid(row=i, column=7, sticky="w", padx=(135, 1), pady=2)
+
+                var = tk.StringVar(value=str(value))
+                dropdown_values = self.cam_config_options_json[key]
+                    
+                widget = ttk.Combobox(self.config_left_frame, textvariable=var, values=dropdown_values, width=18)
+                widget.grid(row=i, column=3, padx=35, pady=2, sticky="w")
+
+                try:
+                    self.config_labels_dict[key] = curr_label
+                    self.config_entrys_dict[key] = widget
+                    self.config_vars[key] = var
+                except Exception:
+                    self.config_labels_dict.update({key: curr_label})
+                    self.config_entrys_dict.update({key: widget})
+                    self.config_vars.update({key: var})
+            i+=1
+        self._update_config_display()
+
+    def _update_config_display(self, event=None):
+        serialNumber = self.selected_camera.get()
+        if not serialNumber or serialNumber not in self.cameras_dict:
+            return # No camera selected or camera not found
+
+        camera = self.cameras_dict[serialNumber]
+        if not hasattr(camera, 'cam_config') or not camera.cam_config:
+            if camera.is_connected == CameraState.CONNECTED:
+                camera.camera_configuration() # Create a default config if it doesn't exist
+
+        config = camera.cam_config
+
+        for key, value in config.items():
+            if isinstance(value, dict):
+                for k2, v2 in value.items():
+                    if key in self.config_vars and k2 in self.config_vars[key]:
+                        self.config_vars[key][k2].set(v2)
+                    if key in self.config_labels_dict and k2 in self.config_labels_dict[key]:
+                        self.config_labels_dict[key][k2].config(text=str(v2))
+            else:
+                if key in self.config_vars:
+                    self.config_vars[key].set(value)
+                if key in self.config_labels_dict:
+                    self.config_labels_dict[key].config(text=str(value))
                     self.config_labels_dict[key][k2].config(text=new_val)
                     self.cameras_dict[serialNumber].cam_config[key][k2] = new_val
             else:
@@ -857,7 +962,7 @@ class CameraMonitorApp:
     def start_camera_preview(self, serial):
         """Start live camera preview loop"""
         try:
-            self.preview_cam = self.cameras_dict[serial].cameraObj
+            self.preview_cam = self.cameras_dict[serial]
             self.preview_cam.set_exposure(0.04)
             self.preview_cam.setup_shutter(mode="open")
             self.preview_cam.set_trigger_mode("int")
@@ -931,7 +1036,7 @@ class CameraMonitorApp:
     def capture_image(self):
         """Capture an image from the selected camera"""
         serial = self.preview_camera.get()
-        cam = self.cameras_dict[serial].cameraObj
+        cam = self.cameras_dict[serial]
 
         cam.set_exposure(0.04)
         cam.set_amp_mode(channel=0, oamp=0, hsspeed=1, preamp=2)
@@ -1105,7 +1210,7 @@ class CameraMonitorApp:
         for serial in serials:
             try:
                 cam = self.cameras_dict[serial]
-                if cam.connection_status():
+                if cam.get_camera_connetion_status == CameraState.CONNECTED:
                     self.camera_status_labels[serial]["status_label"].config(text="Connected", fg="green")
                     self.camera_status_labels[serial]["serial_label"].config(fg="green")
                 else:
