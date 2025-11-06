@@ -60,3 +60,13 @@ Sometimes when you attempt to connect to the camera you may encounter an error l
    3. wait ~5 seconds
    4. Right click the camera again and `Enable device`. - This will restart the usb driver. 
    5. Open a known working, stable, program (like solis) to confirm you are now able to connect and stream data from the camera. 
+
+### Software Requirements
+The required DLL can have different names depending on the Solis version and SDK bitness. For 64-bit version it will be called atmcd64d.dll or atmcd64d_legacy.dll. For 32-bit version, correspondingly, atmcd32d.dll or atmcd32d_legacy.dll. By default, library searches for DLLs in Andor Solis and Andor SDK folder in Program Files folder (or Program files (x86), if 32-bit version of Python is running), as well as in the folder containing the script. If the DLLs are located elsewhere, the path can be specified using the library parameter devices/dlls/andor_sdk2:
+```
+import pylablib as pll
+pll.par["devices/dlls/andor_sdk2"] = "path/to/dlls"
+from pylablib.devices import Andor
+cam = Andor.AndorSDK2Camera()
+```
+**Note**: At the top of the main file are these lines. If necessary, change them to point to the appropriate dlls.

@@ -23,6 +23,8 @@ import logging as log
 import sys
 from pprint import pprint
 import json
+import pylablib as pll
+pll.par["devices/dlls/andor_sdk2"] = r"./Andor_Driver_Pack_2"
 import pylablib.devices.Andor as Andor
 
 serial_numbers = ["13703", "12606", "12574"]
@@ -333,9 +335,9 @@ class CameraMonitorApp:
         disconnect_all_btn = ttk.Button(ops_frame, text="Disconnect All", command=self.disconnect_all_cameras)
         disconnect_all_btn.pack(side=tk.LEFT, padx=5)
 
-    def check_if_idx_connected_already(self, cam_index):
+    def check_if_idx_connected_already(self, cam_index : Camera):
         for sn, cam in self.cameras_dict.items():
-            if cam.is_opened():
+            if cam.idx == cam_index and cam.is_opened():
                 return True
         return False
 
@@ -1227,10 +1229,41 @@ class CameraMonitorApp:
 
 
     def checking_connected_cams_temp(self):
+        print("#-------Camera Temperatures-------#")
         for serial, cam in self.cameras_dict.items():
-            print(f"Current temperature: {cam.get_temperature():.2f} C | Setpoint: {cam.temperature_setpoint} C")
-
+            print(f"     Cam {cam.serialNumber} --> {cam.get_temperature()} C | Setpoint : {cam.temperature_setpoint} C")
         self.root.after(ms=2000, func=self.checking_connected_cams_temp)
+
+
+
+
+def check_dll_files(path, dll_names):
+    """
+    Check whether specified DLL files exist in a given directory.
+
+    Args:
+        path (str): Directory path to check.
+        dll_names (list[str]): List of DLL file names (e.g. ['atmcd64d.dll', 'atcore.dll']).
+
+    Returns:
+        dict[str, bool]: Dictionary mapping each DLL name to True (found) or False (missing).
+    """
+    results = {}
+    if not os.path.isdir(path):
+        print(f"❌ Directory not found: {path}")
+        return {dll: False for dll in dll_names}
+
+    for dll in dll_names:
+        dll_path = os.path.join(path, dll)
+        results[dll] = os.path.isfile(dll_path)
+
+    # Print a simple summary
+    print(f"\nChecking DLLs in: {path}")
+    for dll, exists in results.items():
+        status = "✅ Found" if exists else "❌ Missing"
+        print(f"  {dll:<20} {status}")
+
+    return results
 
 
 def main():
@@ -1243,7 +1276,14 @@ def main():
     
     
     debug_mode = "-d" in args 
-    
+
+
+    required_dll = ["atmcd64d.dll", "ATMCD64CS.dll"]
+    project_dir = os.path.dirname(os.path.abspath(__file__))
+    dll_dir = os.path.join(project_dir, "Andor_Driver_Pack_2")
+    if not check_dll_files(dll_dir, required_dll):
+        raise Exception(f"DLL files NOT found in {dll_dir}. Program will not work without. Please specify the absolute path to dll's.")
+
     with open(path_to_config_options_json, "r") as f:
         cam_config_options_json = json.load(f)
     
