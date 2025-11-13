@@ -5,18 +5,16 @@ Description: Main executable frontend for handing the iXAndor cameras.
 
 
 '''
-import os
+
 import tkinter as tk
 from tkinter import filedialog
 from tkinter.font import Font
 from tkinter import ttk, messagebox
-from PIL import ImageTk, Image, ImageOps
-from tkinter.messagebox import showinfo
+from PIL import ImageTk, Image
 import threading
 import time
 from queue import Queue
-from typing import Dict, List
-# from backend.cameraLogging import *
+from typing import Dict
 from backend.cameraConfig import *
 from backend.cameraDataHandle import *
 import logging as log
@@ -27,7 +25,7 @@ import pylablib as pll
 pll.par["devices/dlls/andor_sdk2"] = r"./Andor_Driver_Pack_2"
 import pylablib.devices.Andor as Andor
 
-serial_numbers = ["13703", "12606", "12574"]
+
 save_data_path = ""
 path_to_config_options_json = "./backend/configuration_options.json"
 cam_config_options_json = None
@@ -73,7 +71,7 @@ class CameraWorker:
                     self._handle_configure(settings)
                     
                 self.command_queue.task_done()
-            except Queue.Empty:
+            except Exception as e:
                 continue
                 
     def _handle_acquisition(self):
@@ -335,7 +333,7 @@ class CameraMonitorApp:
         disconnect_all_btn = ttk.Button(ops_frame, text="Disconnect All", command=self.disconnect_all_cameras)
         disconnect_all_btn.pack(side=tk.LEFT, padx=5)
 
-    def check_if_idx_connected_already(self, cam_index : Camera):
+    def check_if_idx_connected_already(self, cam_index : int):
         for sn, cam in self.cameras_dict.items():
             if cam.idx == cam_index and cam.is_opened():
                 return True
@@ -591,7 +589,7 @@ class CameraMonitorApp:
             if num_cameras:
                 for i in range(num_cameras):
                     if not self.check_if_idx_connected_already(i):
-                        cam = Camera(idx=i, temperature=-25, fan_mode='full', amp_mode=None);
+                        cam = Camera(idx=i, temperature=-25, fan_mode='full', amp_mode=None)
                         if cam.connection_status == CameraState.CONNECTED:
                             try:
                                 info = cam.get_device_info()
@@ -696,143 +694,6 @@ class CameraMonitorApp:
             # Log the error and show an error message
             self.logger.error(f"Error loading notes: {e}")
             messagebox.showerror("Error", f"Failed to load notes:\n{e}")
-
-    def setup_config_options(self):
-        """Setup the camera configuration options"""
-        # Title label
-        config_title = ttk.Label(self.config_frame, text="Camera Configuration", font=("Arial", 14, "bold"))
-        config_title.pack(pady=10)
-        
-        # Camera selection frame
-        selection_frame = ttk.Frame(self.config_frame)
-        selection_frame.pack(fill=tk.X, padx=20, pady=10)
-        
-        ttk.Label(selection_frame, text="Select Camera:").pack(side=tk.LEFT, padx=5)
-        
-        # Camera selection combobox
-        self.selected_camera = tk.StringVar()
-        camera_select = ttk.Combobox(selection_frame, textvariable=self.selected_camera)
-        camera_select['values'] = self.camera_serials
-        camera_select.current(0)
-        camera_select.pack(side=tk.LEFT, padx=5)
-        camera_select.bind('<<ComboboxSelected>>', self._update_config_display)
-        
-        #Update Settings button
-        self.update_button = ttk.Button(selection_frame, text="Update Settings", command=lambda: self.update_config_options(serialNumber=self.selected_camera.get()))
-        self.update_button.pack(side=tk.LEFT, padx=5)
-        
-        self.config_canvas = tk.Canvas(self.config_frame)
-        self.config_canvas.pack(side="left", fill="both", expand=True)
-        
-        self.config_scrollbar = ttk.Scrollbar(self.config_frame, orient="vertical", command=self.config_canvas.yview)
-        self.config_scrollbar.pack(side="right", fill="y")
-        self.config_canvas.configure(yscrollcommand=self.config_scrollbar.set)
-        self.config_canvas.bind('<Configure>', lambda e: self.config_canvas.configure(scrollregion=self.config_canvas.bbox("all")))
-        self.scrollable_frame = ttk.Frame(self.config_canvas)
-        
-        self.config_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        
-        self.config_left_frame = ttk.Frame(self.scrollable_frame, padding=10) #this will contain the entry boxes for users to put values
-        self.config_right_frame = ttk.Frame(self.scrollable_frame, padding=10) #this will show the current values for the camera configs.
-        self.config_left_frame.pack(side="left", fill="both", expand=True)
-        self.config_right_frame.pack(side="right", fill="both", expand=True)
-
-        self.current_settings = ttk.Label(self.config_left_frame, text="Current Settings", font=self.custom_font)
-        self.current_settings.grid(row=0, column=7, padx=(135, 1), pady=5)
-
-        i = 1
-        for key, value in self.exampleConfig.items():
-            if type(value) is dict:
-                tmp_label = ttk.Label(self.config_left_frame, text=f"{key}", font=self.custom_font)
-                tmp_label.grid(row=i, column=0, sticky="w", padx=2, pady=2)
-                i+=1
-                for k2, v2 in value.items():
-
-                    tmp2_label = ttk.Label(self.config_left_frame, text=f"{k2}", font=self.custom_font)
-                    tmp2_label.grid(row=i, column=2, sticky="w", padx=0, pady=2)
-
-                    curr_label = ttk.Label(self.config_left_frame, text=f"{v2}", font=self.custom_font)
-                    curr_label.grid(row=i, column=7, sticky="w", padx=(135, 1), pady=2)
-
-                    var = tk.StringVar(value=str(v2))
-                    dropdown_values = self.cam_config_options_json[key][k2]
-                        
-                    widget = ttk.Combobox(self.config_left_frame, textvariable=var, values=dropdown_values, width=18)
-                    widget.grid(row=i, column=3, padx=35, pady=2, sticky="w")
-
-                    try:
-                        # store label, widget and var
-                        self.config_labels_dict[key].update({k2: curr_label})
-                        self.config_entrys_dict[key].update({k2: widget})
-                        self.config_vars.setdefault(key, {})[k2] = var
-                    except Exception:
-                        self.config_labels_dict.update({key: {k2: curr_label}})
-                        self.config_entrys_dict.update({key: {k2: widget}})
-                        self.config_vars.update({key: {k2: var}})
-
-                    i+=1
-            else:
-                tmp_label = ttk.Label(self.config_left_frame, text=f"{key}", font=self.custom_font)
-                tmp_label.grid(row=i, column=0, sticky="w", padx=5, pady=2)
-
-                curr_label = ttk.Label(self.config_left_frame, text=f"{value}", font=self.custom_font)
-                curr_label.grid(row=i, column=7, sticky="w", padx=(135, 1), pady=2)
-
-                var = tk.StringVar(value=str(value))
-                dropdown_values = self.cam_config_options_json[key]
-                    
-                widget = ttk.Combobox(self.config_left_frame, textvariable=var, values=dropdown_values, width=18)
-                widget.grid(row=i, column=3, padx=35, pady=2, sticky="w")
-
-                try:
-                    self.config_labels_dict[key] = curr_label
-                    self.config_entrys_dict[key] = widget
-                    self.config_vars[key] = var
-                except Exception:
-                    self.config_labels_dict.update({key: curr_label})
-                    self.config_entrys_dict.update({key: widget})
-                    self.config_vars.update({key: var})
-            i+=1
-        self._update_config_display()
-
-    def _update_config_display(self, event=None):
-        serialNumber = self.selected_camera.get()
-        if not serialNumber or serialNumber not in self.cameras_dict:
-            return # No camera selected or camera not found
-
-        camera = self.cameras_dict[serialNumber]
-        if not hasattr(camera, 'cam_config') or not camera.cam_config:
-            if camera.is_connected == CameraState.CONNECTED:
-                camera.camera_configuration() # Create a default config if it doesn't exist
-
-        config = camera.cam_config
-
-        for key, value in config.items():
-            if isinstance(value, dict):
-                for k2, v2 in value.items():
-                    if key in self.config_vars and k2 in self.config_vars[key]:
-                        self.config_vars[key][k2].set(v2)
-                    if key in self.config_labels_dict and k2 in self.config_labels_dict[key]:
-                        self.config_labels_dict[key][k2].config(text=str(v2))
-            else:
-                if key in self.config_vars:
-                    self.config_vars[key].set(value)
-                if key in self.config_labels_dict:
-                    self.config_labels_dict[key].config(text=str(value))
-                    self.config_labels_dict[key][k2].config(text=new_val)
-                    self.cameras_dict[serialNumber].cam_config[key][k2] = new_val
-            # else:
-            #     try:
-            #         var = self.config_vars.get(key, None)
-            #         if var is not None and not isinstance(var, dict):
-            #             new_val = var.get()
-            #         else:
-            #             new_val = self.config_entrys_dict[key].get()
-            #     except Exception:
-            #         new_val = self.config_entrys_dict[key].get()
-
-                self.config_labels_dict[key].config(text=new_val)
-                self.cameras_dict[serialNumber].cam_config[key] = new_val
 
     def setup_preview_options(self):
         """Setup the camera preview options with live streaming inside the preview_frame"""
@@ -982,6 +843,25 @@ class CameraMonitorApp:
             self.preview_running = False
             return
 
+    def _handle_captured_image(self, frame):
+        # Smooth brightness adjustment
+        fmin, fmax = np.min(frame), np.max(frame)
+        if self.vmin is None:
+            self.vmin, self.vmax = fmin, fmax
+        else:
+            self.vmin = 0.9 * self.vmin + 0.1 * fmin
+            self.vmax = 0.9 * self.vmax + 0.1 * fmax
+
+        frame = np.clip(frame, self.vmin, self.vmax)
+        norm = (255 * (frame - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
+
+        # Convert to displayable image and resize to preview window
+        img = Image.fromarray(norm)
+        img = img.resize((self.preview_width, self.preview_height), Image.Resampling.LANCZOS)
+
+        imgtk = ImageTk.PhotoImage(image=img)
+        return imgtk
+
     def live_loop(self):
         try:
             self.vmin, self.vmax = None, None
@@ -991,22 +871,7 @@ class CameraMonitorApp:
                 if frame is None:
                     continue
 
-                # Smooth brightness adjustment
-                fmin, fmax = np.min(frame), np.max(frame)
-                if self.vmin is None:
-                    self.vmin, self.vmax = fmin, fmax
-                else:
-                    self.vmin = 0.9 * self.vmin + 0.1 * fmin
-                    self.vmax = 0.9 * self.vmax + 0.1 * fmax
-
-                frame = np.clip(frame, self.vmin, self.vmax)
-                norm = (255 * (frame - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
-
-                # Convert to displayable image and resize to preview window
-                img = Image.fromarray(norm)
-                img = img.resize((self.preview_width, self.preview_height), Image.Resampling.LANCZOS)
-
-                imgtk = ImageTk.PhotoImage(image=img)
+                imgtk = self._handle_captured_image(frame)
                 self.preview_canvas.after(0, self.update_preview_display, imgtk)
         finally:
             self.preview_cam.stop_acquisition()
@@ -1025,13 +890,6 @@ class CameraMonitorApp:
         self.preview_canvas.imgtk = imgtk
         self.preview_canvas.configure(image=imgtk)
 
-    def array_to_photoimage(self, array):
-        """Convert a grayscale numpy array to a Tkinter-compatible PhotoImage"""
-        array = np.clip(array, 0, None)  # remove negatives
-        norm = 255 * (array - np.min(array)) / (np.ptp(array) + 1e-5)
-        img = Image.fromarray(norm.astype(np.uint8), mode="L")
-        return ImageTk.PhotoImage(img)
-
     def capture_image(self):
         """Capture an image from the selected camera"""
         serial = self.preview_camera.get()
@@ -1039,25 +897,10 @@ class CameraMonitorApp:
 
         if not cam.acquisition_in_progress():
             # Grab image (ensure it's 2D)
+            cam.setup_acquisition(mode="snap", nframes=1)
             image = np.squeeze(cam.snap())
             print("Captured image shape:", image.shape)
-
-            # Smooth brightness adjustment
-            fmin, fmax = np.min(image), np.max(image)
-            if not hasattr(self, "vmin") or self.vmin is None:
-                self.vmin, self.vmax = fmin, fmax
-            else:
-                self.vmin = 0.9 * self.vmin + 0.1 * fmin
-                self.vmax = 0.9 * self.vmax + 0.1 * fmax
-
-            image = np.clip(image, self.vmin, self.vmax)
-            norm = (255 * (image - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
-
-            # Convert to displayable image and resize to preview window
-            img = Image.fromarray(norm)
-            img = img.resize((self.preview_width, self.preview_height), Image.Resampling.LANCZOS)
-            imgtk = ImageTk.PhotoImage(image=img)
-
+            imgtk = self._handle_captured_image(frame=image)
             self.update_preview_display(imgtk)
         else:
             self.logger.warning(f"Camera {cam.serialNumber} is already acquiring an image")
@@ -1083,14 +926,6 @@ class CameraMonitorApp:
             print(f"Error stopping monitoring thread: {e}")
         
         self.root.destroy()
-        
-    def start_monitoring(self):
-        """Start the monitoring thread"""
-        if not self.monitor_thread or not self.monitor_thread.is_alive():
-            self.monitoring = True
-            self.monitor_thread = threading.Thread(target=self.update_acquisition_status, daemon=True)
-            self.monitor_thread.start()
-            print("Camera monitoring started")
 
     def stop_monitoring(self):
         """Stop the monitoring thread"""
@@ -1172,7 +1007,7 @@ class CameraMonitorApp:
             worker.stop_worker()
             
         self.running_experiment = False
-        self.start_monitoring()
+
         messagebox.showinfo("Complete", "Experiment completed successfully!")
     
     def _setup_logging(self, debugLogging):
