@@ -222,11 +222,15 @@ class CameraMonitorApp:
         self.config_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.config_frame, text="Camera Configuration")
 
+        self.experiment_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.experiment_frame, text="Experiment")
+
         # Setup the tabs
         self.setup_status_display()
         self.setup_notes_display()
         self.setup_preview_options()
         self.setup_config_display()
+        self.setup_experiment_tab()
 
         # --- Bottom Button Bar ---
         self.button_frame = ttk.Frame(self.main_frame)
@@ -447,6 +451,193 @@ class CameraMonitorApp:
         self.camera_config_text.delete(1.0, tk.END)
         self.camera_config_text.insert(tk.END, text)
         self.camera_config_text.config(state="disabled")
+
+    def setup_experiment_tab(self):
+        """Sets up the UI for the Experiment tab."""
+        self.logger.info("Setting up experiment tab")
+
+        # --- Title ---
+        experiment_title = ttk.Label(self.experiment_frame, text="Parallel Camera Experiment", font=("Arial", 14, "bold"))
+        experiment_title.pack(pady=10)
+
+        # --- Status Display ---
+        status_frame = ttk.LabelFrame(self.experiment_frame, text="Camera Status", padding=10)
+        status_frame.pack(fill="x", padx=20, pady=10)
+
+        self.experiment_status_labels = {}
+        for i, serial in enumerate(self.camera_serials):
+            frame = ttk.Frame(status_frame)
+            frame.pack(fill=tk.X, pady=5)
+            
+            label = ttk.Label(frame, text=f"Camera {i+1} ({serial}):")
+            label.pack(side=tk.LEFT, padx=5)
+            
+            status_label = ttk.Label(frame, text="Not Ready", font=("Arial", 12))
+            status_label.pack(side=tk.LEFT, padx=20)
+            
+            self.experiment_status_labels[serial] = status_label
+
+        # --- Controls ---
+        control_frame = ttk.Frame(self.experiment_frame)
+        control_frame.pack(fill="x", padx=20, pady=10)
+
+        self.run_experiment_btn = ttk.Button(control_frame, text="Run Experiment", command=self.run_experiment)
+        self.run_experiment_btn.pack(side=tk.LEFT, padx=5)
+
+        ttk.Label(control_frame, text="Acquisition Mode:").pack(side=tk.LEFT, padx=(10, 5))
+        self.acq_mode_var = tk.StringVar(value="Kinetic Series")
+        acq_mode_cb = ttk.Combobox(control_frame, textvariable=self.acq_mode_var, values=["Single Scan", "Kinetic Series"], state="readonly", width=15)
+        acq_mode_cb.pack(side=tk.LEFT)
+        acq_mode_cb.bind("<<ComboboxSelected>>", self._on_acq_mode_change)
+
+
+        self.num_frames_label = ttk.Label(control_frame, text="Number of Frames:")
+        self.num_frames_label.pack(side=tk.LEFT, padx=(10, 5))
+        self.num_frames_var = tk.StringVar(value="10")
+        self.num_frames_entry = ttk.Entry(control_frame, textvariable=self.num_frames_var, width=10)
+        self.num_frames_entry.pack(side=tk.LEFT)
+
+        # --- Log Area ---
+        log_frame = ttk.LabelFrame(self.experiment_frame, text="Experiment Log", padding=10)
+        log_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        self.experiment_log = tk.Text(log_frame, height=10, wrap=tk.WORD, state="disabled")
+        self.experiment_log.pack(fill="both", expand=True)
+
+    def _on_acq_mode_change(self, event=None):
+        """Handles changes in the acquisition mode dropdown."""
+        mode = self.acq_mode_var.get()
+        if mode == "Single Scan":
+            self.num_frames_entry.config(state="disabled")
+            self.num_frames_var.set("1")
+        else: # Kinetic Series
+            self.num_frames_entry.config(state="normal")
+
+    def run_experiment(self):
+        """Runs the parallel camera acquisition experiment."""
+        self.run_experiment_btn.config(state="disabled")
+        self._log_experiment("Starting experiment...")
+
+        if not self._pre_experiment_check():
+            self._log_experiment("Pre-experiment check failed. Aborting.")
+            self.run_experiment_btn.config(state="normal")
+            return
+
+        self._log_experiment("All cameras are ready. Starting acquisition threads...")
+
+        threads = []
+        for serial, camera in self.cameras_dict.items():
+            thread = threading.Thread(target=self._acquisition_thread_worker, args=(camera,), daemon=True)
+            threads.append(thread)
+            thread.start()
+
+        # We can optionally add a thread to monitor the completion of all acquisition threads
+        monitor_thread = threading.Thread(target=self._monitor_experiment_completion, args=(threads,), daemon=True)
+        monitor_thread.start()
+
+    def _pre_experiment_check(self):
+        """Checks if all cameras are connected and configured."""
+        self._log_experiment("Performing pre-experiment check...")
+        all_ready = True
+        
+        # if len(self.cameras_dict) != 4:
+        #     self._log_experiment(f"Error: Expected 4 connected cameras, but found {len(self.cameras_dict)}.")
+        #     all_ready = False
+
+        for serial, label in self.experiment_status_labels.items():
+            if serial in self.cameras_dict:
+                camera = self.cameras_dict[serial]
+                if camera.connection_status == CameraState.CONNECTED and camera.is_configured == CameraState.CONFIGURED:
+                    label.config(text="Ready", foreground="green")
+                else:
+                    status_text = f"Not Ready (Connected: {camera.connection_status.name}, Configured: {camera.is_configured.name})"
+                    label.config(text=status_text, foreground="red")
+                    all_ready = False
+            else:
+                label.config(text="Not Connected", foreground="red")
+                all_ready = False
+        
+        return all_ready
+
+    def _acquisition_thread_worker(self, camera):
+        """The function that each camera thread will execute."""
+        serial = camera.serialNumber
+        try:
+            self._log_experiment(f"[{serial}] Starting acquisition.")
+            self.experiment_status_labels[serial].config(text="Acquiring", foreground="orange")
+
+            acq_mode = self.acq_mode_var.get()
+
+            if acq_mode == "Kinetic Series":
+                try:
+                    num_frames = int(self.num_frames_var.get())
+                    if num_frames <= 0:
+                        raise ValueError("Number of frames must be positive.")
+                except ValueError as e:
+                    self._log_experiment(f"[{serial}] Invalid number of frames: {self.num_frames_var.get()}. Aborting. Error: {e}")
+                    self.experiment_status_labels[serial].config(text="Error", foreground="red")
+                    return
+
+                camera.setup_acquisition(mode="kinetic", nframes=num_frames)
+                camera.start_acquisition()
+                
+                # Wait for acquisition to finish by polling
+                for i in range(num_frames):
+                    camera.wait_for_frame()
+                
+                self._log_experiment(f"[{serial}] Acquisition finished. Reading {num_frames} frames...")
+
+                # Read all frames from buffer
+                frames = []
+                for i in range(num_frames):
+                    frame = camera.read_newest_image(return_info=False)
+                    if frame is not None:
+                        frames.append(frame)
+                
+                if not frames:
+                    raise RuntimeError("Acquired no frames from the camera.")
+
+                data = np.stack(frames)
+
+            elif acq_mode == "Single Scan":
+                camera.setup_acquisition(mode="single", nframes=1)
+                self._log_experiment(f"[{serial}] Snapping single image...")
+                data = camera.snap(timeout=5) # 10 second timeout for a single snap
+                self._log_experiment(f"[{serial}] Single image snapped.")
+
+            else:
+                raise ValueError(f"Unknown acquisition mode: {acq_mode}")
+
+            
+            self._log_experiment(f"[{serial}] Saving data to FITS file.")
+            
+            header_text = self.notes_text.get("1.0", tk.END)
+            save_path = os.path.join(os.getcwd(), "Data")
+            os.makedirs(save_path, exist_ok=True)
+            
+            save_fits_data(data, savepath=save_path, header_text=header_text, serial=serial)
+            
+            self.experiment_status_labels[serial].config(text="Finished", foreground="blue")
+            self._log_experiment(f"[{serial}] Data saved successfully.")
+
+        except Exception as e:
+            self.experiment_status_labels[serial].config(text="Error", foreground="red")
+            self._log_experiment(f"[{serial}] Error: {e}")
+        
+    def _monitor_experiment_completion(self, threads):
+        """Waits for all acquisition threads to complete."""
+        for thread in threads:
+            thread.join()
+        
+        self._log_experiment("All cameras have finished their tasks. Experiment complete.")
+        self.run_experiment_btn.config(state="normal")
+
+    def _log_experiment(self, message):
+        """Logs a message to the experiment log text widget."""
+        self.experiment_log.config(state="normal")
+        self.experiment_log.insert(tk.END, f"{time.strftime('%H:%M:%S')} - {message}\n")
+        self.experiment_log.see(tk.END)
+        self.experiment_log.config(state="disabled")
 
     def _update_current_camera_display(self, event=None):
         """When a camera is selected, load its JSON file (or create one if missing) and display."""
