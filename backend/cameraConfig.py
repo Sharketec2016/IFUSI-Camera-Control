@@ -1,11 +1,7 @@
 import json
-
+from pprint import pprint
 from pylablib.devices import Andor
 from pylablib.devices.Andor import AndorSDK2Camera
-import numpy as np
-import pandas as pd
-from time import sleep
-from astropy.io import fits
 import os
 from enum import Enum
 import logging as log
@@ -128,7 +124,14 @@ class Camera(AndorSDK2Camera):
 
 
                 self.set_fan_mode(mode=configDict['fanLevel'])
-                self.set_acquisition_mode(mode=configDict['acquisitionMode'])
+                if (configDict['acquisitionMode'].lower() == 'kinetic'):
+                    self.setup_kinetic_mode(num_cycle=configDict['KineticSeriesLength'],
+                                            cycle_time=configDict['KineticCycleTime'],
+                                            num_acc=configDict['acquisitionNumber']
+                                            )
+                else:
+                    self.set_acquisition_mode(mode=configDict['acquisitionMode'])
+
                 self.set_trigger_mode(mode=configDict['triggeringMode'])
                 self.set_read_mode(mode=configDict['readoutMode'])
                 self.set_exposure(exposure=configDict['exposureTime'])
@@ -140,11 +143,7 @@ class Camera(AndorSDK2Camera):
                 elif (configDict['shutterSettings']['ExternalShutter'].lower() == 'close'):
                     self.setup_shutter(mode='close')
 
-                if (configDict['acquisitionMode'].lower() == 'kinetic'):
-                    self.setup_kinetic_mode(num_cycle=configDict['KineticSeriesLength'],
-                                                      cycle_time=configDict['KineticCycleTime'],
-                                                      num_acc=configDict['acquisitionNumber']
-                                                      )
+
 
                 if (configDict['frameTransfer'].lower() == 'on'):
                     self.enable_frame_transfer_mode(enable=True)
@@ -159,16 +158,21 @@ class Camera(AndorSDK2Camera):
                 self.set_temperature(int(configDict['temperatureSetpoint']))
                 self.temperature_setpoint = int(configDict['temperatureSetpoint'])
 
-                self.is_configured = CameraState.CONFIGURED
-                self.logger.info(f"Camera {self.serialNumber} configured successfully")
-                return True
+
+                if self.is_acquisition_setup():
+                    self.is_configured = CameraState.CONFIGURED
+                    self.logger.info(f"Camera {self.serialNumber} configured successfully")
+                    return True
+                else:
+                    self.is_configured = CameraState.NOT_CONFIGURED
+                    self.logger.error(f"Camera {self.serialNumber} not configured")
+                    return False
             except Exception as e:
                 self.logger.error(f"Camera {self.serialNumber} configuration failed: {e}")
                 self.is_configured = CameraState.NOT_CONFIGURED
                 return False
         self.is_configured = CameraState.NOT_CONFIGURED
         return False
-
 
     def _configure_amp_mode(self, configDict):
         configured_amp = False
@@ -219,4 +223,9 @@ class Camera(AndorSDK2Camera):
     def get_acquisition_status(self):
         self.is_in_acquisition = CameraState.ACQUIRING if self.get_status() == "acquiring" else CameraState.NOT_ACQUIRING
         return self.is_in_acquisition
+
+    def full_camera_info(self):
+        pprint(self.get_full_info(include = 'all'))
+        pprint(self.get_full_status(include = 'all'))
+        pprint(self.get_settings(include = 'all'))
 
