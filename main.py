@@ -162,7 +162,7 @@ class CameraMonitorApp:
         self.config_dir = os.path.join(os.getcwd(), "configs")
         os.makedirs(self.config_dir, exist_ok=True)
         self.create_ui()
-        self.checking_connected_cams_temp()
+        # self.checking_connected_cams_temp()
         # self.check_camera_conection()
 
     def __identify_cameras__(self):
@@ -479,7 +479,6 @@ class CameraMonitorApp:
         else:
             self._display_camera_config_text(json.dumps(cam_cfg, indent=2))
 
-
     def _apply_camera_config(self):
         """Apply current UI settings and save to camera-specific JSON file."""
         serial = self.selected_camera_var.get()
@@ -642,8 +641,6 @@ class CameraMonitorApp:
                 self.logger.error(f"Error disconnecting from camera {serial}: {e}")
         self.update_UI_elements()
 
-
-
     def save_fits_header(self):
         """Save the content of the notes text area to a file."""
         # Ask the user for a file path to save to
@@ -699,8 +696,6 @@ class CameraMonitorApp:
             # Log the error and show an error message
             self.logger.error(f"Error loading notes: {e}")
             messagebox.showerror("Error", f"Failed to load notes:\n{e}")
-
-
 
     def setup_config_options(self):
         """Setup the camera configuration options"""
@@ -1042,32 +1037,33 @@ class CameraMonitorApp:
         serial = self.preview_camera.get()
         cam = self.cameras_dict[serial]
 
-        cam.set_exposure(0.04)
-        cam.set_amp_mode(channel=0, oamp=0, hsspeed=1, preamp=2)
-        cam.set_vsspeed(vsspeed=3)
-        cam.setup_shutter(mode="open")
+        if not cam.acquisition_in_progress():
+            # Grab image (ensure it's 2D)
+            image = np.squeeze(cam.snap())
+            print("Captured image shape:", image.shape)
 
-        # Grab image (ensure it's 2D)
-        image = np.squeeze(cam.grab(1))
-        print("Captured image shape:", image.shape)
+            # Smooth brightness adjustment
+            fmin, fmax = np.min(image), np.max(image)
+            if not hasattr(self, "vmin") or self.vmin is None:
+                self.vmin, self.vmax = fmin, fmax
+            else:
+                self.vmin = 0.9 * self.vmin + 0.1 * fmin
+                self.vmax = 0.9 * self.vmax + 0.1 * fmax
 
-        # Smooth brightness adjustment
-        fmin, fmax = np.min(image), np.max(image)
-        if not hasattr(self, "vmin") or self.vmin is None:
-            self.vmin, self.vmax = fmin, fmax
+            image = np.clip(image, self.vmin, self.vmax)
+            norm = (255 * (image - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
+
+            # Convert to displayable image and resize to preview window
+            img = Image.fromarray(norm)
+            img = img.resize((self.preview_width, self.preview_height), Image.Resampling.LANCZOS)
+            imgtk = ImageTk.PhotoImage(image=img)
+
+            self.update_preview_display(imgtk)
         else:
-            self.vmin = 0.9 * self.vmin + 0.1 * fmin
-            self.vmax = 0.9 * self.vmax + 0.1 * fmax
+            self.logger.warning(f"Camera {cam.serialNumber} is already acquiring an image")
+            messagebox.showwarning(f"Camera {cam.serialNumber} is already acquiring an image. Please wait")
 
-        image = np.clip(image, self.vmin, self.vmax)
-        norm = (255 * (image - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
 
-        # Convert to displayable image and resize to preview window
-        img = Image.fromarray(norm)
-        img = img.resize((self.preview_width, self.preview_height), Image.Resampling.LANCZOS)
-        imgtk = ImageTk.PhotoImage(image=img)
-
-        self.update_preview_display(imgtk)
 
     def exit_app(self):
         """Clean exit of the application"""
@@ -1226,7 +1222,6 @@ class CameraMonitorApp:
 
         # Schedule the next check in 2 seconds (2000 ms)
         self.root.after(ms=2000, func=self.check_camera_conection)
-
 
     def checking_connected_cams_temp(self):
         print("#-------Camera Temperatures-------#")
