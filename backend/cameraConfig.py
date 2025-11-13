@@ -119,12 +119,20 @@ class Camera(AndorSDK2Camera):
 
         if self.is_opened():
             try:
+
+                '''
+                It appears that there are specific "modes" for the amplifier and preamp. 
+                Only those modes can be set and will work. As such we need to specify to the user which mode 
+                they can choose from. 
+                '''
+
+
                 self.set_fan_mode(mode=configDict['fanLevel'])
                 self.set_acquisition_mode(mode=configDict['acquisitionMode'])
                 self.set_trigger_mode(mode=configDict['triggeringMode'])
                 self.set_read_mode(mode=configDict['readoutMode'])
                 self.set_exposure(exposure=configDict['exposureTime'])
-                self.set_EMCCD_gain(gain=configDict['emGain']['gainLevel'])
+                self.set_EMCCD_gain(gain=configDict['emGain']['gainLevel'], advanced=False)
                 if (configDict['shutterSettings']['ExternalShutter'].lower() == 'fullauto'):
                     self.setup_shutter(mode='auto')
                 elif (configDict['shutterSettings']['ExternalShutter'].lower() == 'open'):
@@ -163,6 +171,7 @@ class Camera(AndorSDK2Camera):
 
 
     def _configure_amp_mode(self, configDict):
+        configured_amp = False
         channel = 0
         oamp = 0 if configDict['horizontalShift']['outputAmp'] is "EM" else 1
         preamp = 0 if configDict['horizontalShift']['preAmpGain'] is "Gain1" else 1
@@ -177,26 +186,32 @@ class Camera(AndorSDK2Camera):
         else:
             hsspeed = 0
 
-
-        self.set_amp_mode(
-            channel=channel,
-            oamp = oamp,
-            hsspeed = hsspeed,
-            preamp = preamp
-        )
+        #now that we have all of the settings. We need to find the mode that matches this
+        for mode in self.get_all_amp_modes():
+            if mode.channel == channel and mode.oamp == oamp and mode.hsspeed == hsspeed and mode.preamp == preamp:
+                self.set_amp_mode(
+                    channel=mode.channel,
+                    oamp = mode.oamp,
+                    hsspeed = mode.hsspeed,
+                    preamp = mode.preamp
+                )
+                configured_amp = True
+        if not configured_amp:          #backup incase we were unsuccessful in configuring the amp for the camera
+            self.init_amp_mode(mode = self.get_all_amp_modes()[8])
+            self.logger.error(f"Camera {self.serialNumber} amplifier was not manually configured correctly. Setting amp to default conventional setting")
 
     def _configure_vsspeed(self, configDict):
         all_speeds = self.get_all_vsspeeds()
         if(configDict['verticalShift']['shiftSpeed'] == '0.6'):
-            self.set_vsspeed(all_speeds[0])
+            self.set_vsspeed(0)
         elif(configDict['verticalShift']['shiftSpeed'] == '1.13'):
-            self.set_vsspeed(all_speeds[1])
+            self.set_vsspeed(1)
         elif(configDict['verticalShift']['shiftSpeed'] == '2.2'):
-            self.set_vsspeed(all_speeds[2])
+            self.set_vsspeed(2)
         elif(configDict['verticalShift']['shiftSpeed'] == '4.33'):
-            self.set_vsspeed(all_speeds[3])
+            self.set_vsspeed(3)
         else:
-            self.set_vsspeed(all_speeds[0])
+            self.set_vsspeed(0)
 
     def get_camera_connetion_status(self):
         self.connection_status = CameraState.CONNECTED if self.is_opened() else CameraState.DISCONNECTED
