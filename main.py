@@ -23,6 +23,8 @@ import logging as log
 import sys
 from pprint import pprint
 import json
+import pylablib as pll
+pll.par["devices/dlls/andor_sdk2"] = r"./Andor_Driver_Pack_2"
 import pylablib.devices.Andor as Andor
 
 serial_numbers = ["13703", "12606", "12574"]
@@ -118,7 +120,7 @@ class CameraWorker:
     def _handle_configure(self, settings):
         """Handle camera configuration"""
         try:
-            self.camera.configure_camera_settings(settings)
+            self.camera.camera_configuration(settings)
         except Exception as e:
             print(f"Error configuring camera {self.camera.serialNumber}: {e}")
 
@@ -160,6 +162,7 @@ class CameraMonitorApp:
         self.config_dir = os.path.join(os.getcwd(), "configs")
         os.makedirs(self.config_dir, exist_ok=True)
         self.create_ui()
+        # self.checking_connected_cams_temp()
         # self.check_camera_conection()
 
     def __identify_cameras__(self):
@@ -332,9 +335,9 @@ class CameraMonitorApp:
         disconnect_all_btn = ttk.Button(ops_frame, text="Disconnect All", command=self.disconnect_all_cameras)
         disconnect_all_btn.pack(side=tk.LEFT, padx=5)
 
-    def check_if_idx_connected_already(self, cam_index):
+    def check_if_idx_connected_already(self, cam_index : Camera):
         for sn, cam in self.cameras_dict.items():
-            if cam.is_opened():
+            if cam.idx == cam_index and cam.is_opened():
                 return True
         return False
 
@@ -470,12 +473,11 @@ class CameraMonitorApp:
         self._populate_config_fields_from_dict(cam_cfg)
 
         #update the selected camera with the config settings
-        self.cameras_dict[serial].configure_camera_settings(configDict = cam_cfg)
+        self.cameras_dict[serial].camera_configuration(configDict = cam_cfg)
         if(self.cameras_dict[serial].is_configured != CameraState.CONFIGURED):
             self._display_camera_config_text(f"ERROR: Camera {serial} was not configured upon selection. Please continue with camera configuration.")
         else:
             self._display_camera_config_text(json.dumps(cam_cfg, indent=2))
-
 
     def _apply_camera_config(self):
         """Apply current UI settings and save to camera-specific JSON file."""
@@ -639,8 +641,6 @@ class CameraMonitorApp:
                 self.logger.error(f"Error disconnecting from camera {serial}: {e}")
         self.update_UI_elements()
 
-
-
     def save_fits_header(self):
         """Save the content of the notes text area to a file."""
         # Ask the user for a file path to save to
@@ -696,8 +696,6 @@ class CameraMonitorApp:
             # Log the error and show an error message
             self.logger.error(f"Error loading notes: {e}")
             messagebox.showerror("Error", f"Failed to load notes:\n{e}")
-
-
 
     def setup_config_options(self):
         """Setup the camera configuration options"""
@@ -1039,32 +1037,33 @@ class CameraMonitorApp:
         serial = self.preview_camera.get()
         cam = self.cameras_dict[serial]
 
-        cam.set_exposure(0.04)
-        cam.set_amp_mode(channel=0, oamp=0, hsspeed=1, preamp=2)
-        cam.set_vsspeed(vsspeed=3)
-        cam.setup_shutter(mode="open")
+        if not cam.acquisition_in_progress():
+            # Grab image (ensure it's 2D)
+            image = np.squeeze(cam.snap())
+            print("Captured image shape:", image.shape)
 
-        # Grab image (ensure it's 2D)
-        image = np.squeeze(cam.grab(1))
-        print("Captured image shape:", image.shape)
+            # Smooth brightness adjustment
+            fmin, fmax = np.min(image), np.max(image)
+            if not hasattr(self, "vmin") or self.vmin is None:
+                self.vmin, self.vmax = fmin, fmax
+            else:
+                self.vmin = 0.9 * self.vmin + 0.1 * fmin
+                self.vmax = 0.9 * self.vmax + 0.1 * fmax
 
-        # Smooth brightness adjustment
-        fmin, fmax = np.min(image), np.max(image)
-        if not hasattr(self, "vmin") or self.vmin is None:
-            self.vmin, self.vmax = fmin, fmax
+            image = np.clip(image, self.vmin, self.vmax)
+            norm = (255 * (image - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
+
+            # Convert to displayable image and resize to preview window
+            img = Image.fromarray(norm)
+            img = img.resize((self.preview_width, self.preview_height), Image.Resampling.LANCZOS)
+            imgtk = ImageTk.PhotoImage(image=img)
+
+            self.update_preview_display(imgtk)
         else:
-            self.vmin = 0.9 * self.vmin + 0.1 * fmin
-            self.vmax = 0.9 * self.vmax + 0.1 * fmax
+            self.logger.warning(f"Camera {cam.serialNumber} is already acquiring an image")
+            messagebox.showwarning(f"Camera {cam.serialNumber} is already acquiring an image. Please wait")
 
-        image = np.clip(image, self.vmin, self.vmax)
-        norm = (255 * (image - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
 
-        # Convert to displayable image and resize to preview window
-        img = Image.fromarray(norm)
-        img = img.resize((self.preview_width, self.preview_height), Image.Resampling.LANCZOS)
-        imgtk = ImageTk.PhotoImage(image=img)
-
-        self.update_preview_display(imgtk)
 
     def exit_app(self):
         """Clean exit of the application"""
@@ -1134,7 +1133,7 @@ class CameraMonitorApp:
         
         for camera in self.cameras:
             try:    
-                camera.configure_camera_settings()
+                camera.camera_configuration()
                 # camera.acquisition_configuration()
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to configure camera {camera.serialNumber}: {str(e)}")
@@ -1224,6 +1223,44 @@ class CameraMonitorApp:
         # Schedule the next check in 2 seconds (2000 ms)
         self.root.after(ms=2000, func=self.check_camera_conection)
 
+    def checking_connected_cams_temp(self):
+        print("#-------Camera Temperatures-------#")
+        for serial, cam in self.cameras_dict.items():
+            print(f"     Cam {cam.serialNumber} --> {cam.get_temperature()} C | Setpoint : {cam.temperature_setpoint} C")
+        self.root.after(ms=2000, func=self.checking_connected_cams_temp)
+
+
+
+
+def check_dll_files(path, dll_names):
+    """
+    Check whether specified DLL files exist in a given directory.
+
+    Args:
+        path (str): Directory path to check.
+        dll_names (list[str]): List of DLL file names (e.g. ['atmcd64d.dll', 'atcore.dll']).
+
+    Returns:
+        dict[str, bool]: Dictionary mapping each DLL name to True (found) or False (missing).
+    """
+    results = {}
+    if not os.path.isdir(path):
+        print(f"❌ Directory not found: {path}")
+        return {dll: False for dll in dll_names}
+
+    for dll in dll_names:
+        dll_path = os.path.join(path, dll)
+        results[dll] = os.path.isfile(dll_path)
+
+    # Print a simple summary
+    print(f"\nChecking DLLs in: {path}")
+    for dll, exists in results.items():
+        status = "✅ Found" if exists else "❌ Missing"
+        print(f"  {dll:<20} {status}")
+
+    return results
+
+
 def main():
     args = sys.argv #pass in command line arguments.
     if len(args) > 1 and (args[1] == "--help" or args[1] == '-h' or args[1] == '-H'):
@@ -1234,7 +1271,14 @@ def main():
     
     
     debug_mode = "-d" in args 
-    
+
+
+    required_dll = ["atmcd64d.dll", "ATMCD64CS.dll"]
+    project_dir = os.path.dirname(os.path.abspath(__file__))
+    dll_dir = os.path.join(project_dir, "Andor_Driver_Pack_2")
+    if not check_dll_files(dll_dir, required_dll):
+        raise Exception(f"DLL files NOT found in {dll_dir}. Program will not work without. Please specify the absolute path to dll's.")
+
     with open(path_to_config_options_json, "r") as f:
         cam_config_options_json = json.load(f)
     
