@@ -339,111 +339,111 @@ class CameraMonitorApp:
         disconnect_all_btn = ttk.Button(ops_frame, text="Disconnect All", command=self.disconnect_all_cameras)
         disconnect_all_btn.pack(side=tk.LEFT, padx=5)
 
+    def setup_config_display(self):
+        """Build the Camera Configuration tab with a more organized tabbed layout."""
+        self.logger.info("Setting up redesigned camera configuration tab")
+
+        # --- Top toolbar (unchanged) ---
+        top_frame = ttk.Frame(self.config_frame, padding=(5, 5))
+        top_frame.pack(fill="x", pady=(10, 5), padx=10)
+        ttk.Label(top_frame, text="Select Camera:", font=("Helvetica", 12, "bold")).pack(side="left", padx=(0, 5))
+        self.selected_camera_var = tk.StringVar(value=None)
+        self.camera_selector = ttk.Combobox(
+            top_frame, textvariable=self.selected_camera_var, values=list(self.cameras_dict.keys()),
+            state="readonly", width=20
+        )
+        self.camera_selector.pack(side="left", padx=(0, 10))
+        self.camera_selector.bind("<<ComboboxSelected>>", self._update_current_camera_display)
+        apply_btn = ttk.Button(top_frame, text="Apply to Camera", command=self._apply_camera_config)
+        apply_btn.pack(side="left", padx=(0, 5))
+        reset_btn = ttk.Button(top_frame, text="Reset to Defaults", command=self._reset_camera_config)
+        reset_btn.pack(side="left")
+
+        # --- Two-column main layout (unchanged) ---
+        content_frame = ttk.Frame(self.config_frame)
+        content_frame.pack(fill="both", expand=True, padx=10, pady=5)
+        content_frame.columnconfigure(0, weight=2)
+        content_frame.columnconfigure(1, weight=1)
+
+        # --- Left column: New Tabbed Notebook for settings ---
+        left_frame = ttk.LabelFrame(content_frame, text="Configuration Editor", padding=10)
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        
+        config_notebook = ttk.Notebook(left_frame)
+        config_notebook.pack(fill="both", expand=True)
+
+        # Create the individual tabs
+        tab_acq = ttk.Frame(config_notebook, padding=10)
+        tab_shift = ttk.Frame(config_notebook, padding=10)
+        tab_gain = ttk.Frame(config_notebook, padding=10)
+        tab_cooling = ttk.Frame(config_notebook, padding=10)
+
+        config_notebook.add(tab_acq, text="Acquisition")
+        config_notebook.add(tab_shift, text="Shift/Image")
+        config_notebook.add(tab_gain, text="Gain/Shutter")
+        config_notebook.add(tab_cooling, text="Cooling")
+
+        # --- Right column: Current camera config viewer (unchanged) ---
+        right_frame = ttk.LabelFrame(content_frame, text="Current Camera Configuration", padding=10)
+        right_frame.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+        self.camera_config_text = tk.Text(right_frame, wrap="none", height=30, state="disabled")
+        self.camera_config_text.pack(fill="both", expand=True)
+        self._display_camera_config_text("No camera selected")
+
+        # --- Helper function to create a widget ---
+        def create_widget(parent, key, value, prefix=""):
+            full_key = f"{prefix}.{key}" if prefix else key
+            frame = ttk.Frame(parent)
+            frame.pack(fill="x", pady=2)
+            
+            label_text = key.replace("_", " ").title()
+            ttk.Label(frame, text=label_text, width=20).pack(side="left", anchor="w")
+
+            if isinstance(value, list):
+                var = tk.StringVar(value=value[0])
+                self.config_vars[full_key] = var
+                ttk.Combobox(frame, textvariable=var, values=value, state="readonly").pack(side="left", fill="x", expand=True)
+            elif isinstance(value, dict):
+                # For nested dicts, create a sub-frame
+                sub_frame = ttk.LabelFrame(parent, text=label_text, padding=10)
+                sub_frame.pack(fill="x", expand=True, pady=5, padx=5)
+                for sub_key, sub_value in value.items():
+                    create_widget(sub_frame, sub_key, sub_value, prefix=full_key)
+            else: # String, int, float
+                var_type = tk.DoubleVar if isinstance(value, float) else (tk.IntVar if isinstance(value, int) else tk.StringVar)
+                var = var_type(value=value)
+                self.config_vars[full_key] = var
+                ttk.Entry(frame, textvariable=var).pack(side="left", fill="x", expand=True)
+
+        # --- Populate the tabs with widgets ---
+        if self.cam_config_options_json:
+            # Define which top-level keys go into which tab
+            tab_map = {
+                "acquisitionMode": tab_acq, "triggeringMode": tab_acq, "readoutMode": tab_acq,
+                "exposureTime": tab_acq, "acquisitionNumber": tab_acq, "KineticSeriesLength": tab_acq,
+                "KineticCycleTime": tab_acq,
+                
+                "frameTransfer": tab_shift, "verticalShift": tab_shift, "horizontalShift": tab_shift,
+                "baselineClamp": tab_shift,
+
+                "emGain": tab_gain, "shutterSettings": tab_gain,
+
+                "fanLevel": tab_cooling, "temperatureSetpoint": tab_cooling
+            }
+            
+            for key, value in self.cam_config_options_json.items():
+                parent_tab = tab_map.get(key)
+                if parent_tab:
+                    create_widget(parent_tab, key, value)
+        else:
+            ttk.Label(config_notebook, text="No configuration JSON loaded").pack(pady=20)
+
     def check_if_idx_connected_already(self, cam_index : int):
         for sn, cam in self.cameras_dict.items():
             if cam.idx == cam_index and cam.is_opened():
                 return True
         return False
 
-    def setup_config_display(self):
-        """Build the Camera Configuration tab dynamically with camera selector, toolbar, and config viewer."""
-        self.logger.info("Setting up camera configuration tab")
-
-        # --- Top toolbar: camera selection + Apply / Reset buttons ---
-        top_frame = ttk.Frame(self.config_frame, padding=(5, 5))
-        top_frame.pack(fill="x", pady=(10, 5), padx=10)
-
-        ttk.Label(top_frame, text="Select Camera:", font=("Helvetica", 12, "bold")).pack(side="left", padx=(0, 5))
-
-        # Camera selector dropdown
-        self.selected_camera_var = tk.StringVar(value=None)
-        self.camera_selector = ttk.Combobox(
-            top_frame,
-            textvariable=self.selected_camera_var,
-            values=list(self.cameras_dict.keys()),
-            state="readonly",
-            width=20
-        )
-        self.camera_selector.pack(side="left", padx=(0, 10))
-        self.camera_selector.bind("<<ComboboxSelected>>", self._update_current_camera_display)
-
-        # Apply and Reset buttons
-        apply_btn = ttk.Button(top_frame, text="Apply to Camera", command=self._apply_camera_config)
-        apply_btn.pack(side="left", padx=(0, 5))
-
-        reset_btn = ttk.Button(top_frame, text="Reset to Defaults", command=self._reset_camera_config)
-        reset_btn.pack(side="left")
-
-        # Spacer (for future elements or to push everything left)
-        ttk.Frame(top_frame).pack(side="left", expand=True)
-
-        # --- Two-column main layout ---
-        content_frame = ttk.Frame(self.config_frame)
-        content_frame.pack(fill="both", expand=True, padx=10, pady=5)
-        content_frame.columnconfigure(0, weight=2)
-        content_frame.columnconfigure(1, weight=1)
-
-        # Left column (config editor)
-        left_frame = ttk.LabelFrame(content_frame, text="Configuration Editor", padding=10)
-        left_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
-
-        # Right column (current camera config)
-        right_frame = ttk.LabelFrame(content_frame, text="Current Camera Configuration", padding=10)
-        right_frame.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
-
-        # --- Scrollable config editor in left frame ---
-        canvas = tk.Canvas(left_frame)
-        scrollbar = ttk.Scrollbar(left_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Build config editor dynamically from JSON
-        def build_config_section(parent, data, section_prefix=""):
-            for key, value in data.items():
-                full_key = f"{section_prefix}.{key}" if section_prefix else key
-
-                if isinstance(value, dict):
-                    section_label = ttk.Label(parent, text=key, font=("Helvetica", 11, "bold"))
-                    section_label.pack(anchor="w", pady=(10, 0))
-                    sub_frame = ttk.Frame(parent, padding=(20, 0, 0, 0))
-                    sub_frame.pack(fill="x", padx=10)
-                    build_config_section(sub_frame, value, full_key)
-
-                elif isinstance(value, list):
-                    label = ttk.Label(parent, text=key)
-                    label.pack(anchor="w", padx=10)
-                    var = tk.StringVar(value=value[0])
-                    self.config_vars[full_key] = var
-                    dropdown = ttk.Combobox(parent, textvariable=var, values=value, state="readonly")
-                    dropdown.pack(fill="x", padx=20, pady=2)
-
-                elif isinstance(value, (int, float, str)):
-                    label = ttk.Label(parent, text=key)
-                    label.pack(anchor="w", padx=10)
-                    var_type = tk.DoubleVar if isinstance(value, float) else (
-                        tk.IntVar if isinstance(value, int) else tk.StringVar
-                    )
-                    var = var_type(value=value)
-                    self.config_vars[full_key] = var
-                    entry = ttk.Entry(parent, textvariable=var)
-                    entry.pack(fill="x", padx=20, pady=2)
-
-        # Build from JSON or show fallback message
-        if self.cam_config_options_json:
-            build_config_section(scrollable_frame, self.cam_config_options_json)
-        else:
-            ttk.Label(scrollable_frame, text="No configuration JSON loaded").pack(pady=20)
-
-        # --- Right column: Current camera configuration viewer ---
-        self.camera_config_text = tk.Text(right_frame, wrap="none", height=30, state="disabled")
-        self.camera_config_text.pack(fill="both", expand=True)
-
-        # Optional: placeholder text
-        self._display_camera_config_text("No camera selected")
 
     def _display_camera_config_text(self, text: str):
         """Helper to safely update the right-side text box."""
