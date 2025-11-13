@@ -1,3 +1,5 @@
+import json
+
 from pylablib.devices import Andor
 from pylablib.devices.Andor import AndorSDK2Camera
 import numpy as np
@@ -70,11 +72,23 @@ class Camera(AndorSDK2Camera):
         :return: True or False on configuration
         '''
 
-        if (configDict is not None):
+        if configDict is not None:
             self.cam_config = configDict
 
-        elif(configDir is not None):
-                pass
+        elif configDir is not None and os.path.isdir(configDir):
+            expected_name = f"{self.serialNumber}_configs.json"
+            for f in os.listdir(configDir):
+                if f == expected_name:
+                    file_path = os.path.join(configDir, f)
+                    try:
+                        with open(file_path, "r") as json_file:
+                            configDict = json.load(json_file)
+                    except json.JSONDecodeError as e:
+                        self.logger.error(f"Error reading {file_path}: {e}\nCould not import camera settings.")
+                        self.is_configured = CameraState.NOT_CONFIGURED
+                    except Exception as e:
+                        self.logger.error(f"Error reading {file_path}: {e} | GENERAL CONFIGURATION ERROR ")
+                        self.is_configured = CameraState.NOT_CONFIGURED
         else:
             configDict = {
                 'acquisitionMode': "kinetic",
