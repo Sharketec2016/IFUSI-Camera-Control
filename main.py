@@ -8,6 +8,8 @@ Description: Main executable frontend for handing the iXAndor cameras.
 
 import tkinter as tk
 from tkinter import filedialog
+import numpy as np
+from time import sleep
 from tkinter.font import Font
 from tkinter import ttk, messagebox
 from PIL import ImageTk, Image
@@ -906,8 +908,6 @@ class CameraMonitorApp:
             self.logger.warning(f"Camera {cam.serialNumber} is already acquiring an image")
             messagebox.showwarning(f"Camera {cam.serialNumber} is already acquiring an image. Please wait")
 
-
-
     def exit_app(self):
         """Clean exit of the application"""
         try:
@@ -1009,7 +1009,7 @@ class CameraMonitorApp:
         self.running_experiment = False
 
         messagebox.showinfo("Complete", "Experiment completed successfully!")
-    
+
     def _setup_logging(self, debugLogging):
         logger = log.getLogger(f"CameraApplication")
         if(debugLogging):
@@ -1022,13 +1022,13 @@ class CameraMonitorApp:
                 os.makedirs(f"{dir_path}/logs")
             save_path = f"{dir_path}/logs"
             handler = log.FileHandler(f'{save_path}/cameraApplication.log')
-            
+
             if(debugLogging):
                 handler.setLevel(log.DEBUG)
             else:
                 handler.setLevel(log.INFO)
-            
-            
+
+
             formatter = log.Formatter('[%(asctime)s] %(name)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
             handler.setFormatter(formatter)
             logger.addHandler(handler)
