@@ -7,6 +7,7 @@ Description: Main executable frontend for handing the iXAndor cameras.
 '''
 
 import tkinter as tk
+import cv2
 from tkinter import filedialog
 import numpy as np
 from time import sleep
@@ -500,6 +501,8 @@ class CameraMonitorApp:
         self.logger.info(f"Saved updated config for camera {serial}")
         self._display_camera_config_text(json.dumps(new_cfg, indent=2))
 
+        self.cameras_dict[serial].camera_configuration(configDict = new_cfg)
+
     def _unflatten_config(self, flat_dict):
         """Convert {'a.b.c': 1} back into nested dict structure."""
         result = {}
@@ -816,27 +819,15 @@ class CameraMonitorApp:
             self.preview_select.configure(state="disabled")
             self.start_camera_preview(serial)
 
-        elif not start and getattr(self, "preview_running", False):
+        elif not start and getattr(self, "preview_running", True):
             self.preview_running = False
             self.preview_select.configure(state="readonly")
             self.preview_canvas.config(text="Preview stopped", image="")
 
     def start_camera_preview(self, serial):
         """Start live camera preview loop"""
+        self.preview_cam = self.cameras_dict[serial]
         try:
-            self.preview_cam = self.cameras_dict[serial]
-            self.preview_cam.set_exposure(0.04)
-            self.preview_cam.setup_shutter(mode="open")
-            self.preview_cam.set_trigger_mode("int")
-            self.preview_cam.set_amp_mode(
-                channel=0,
-                oamp=0,
-                hsspeed=1,
-                preamp=2
-            )
-            self.preview_cam.setup_acquisition(mode="sequence", nframes=100)
-
-            sleep(0.5)
             self.preview_cam.start_acquisition()
             self.preview_thread = threading.Thread(target=self.live_loop, daemon=True)
             self.preview_thread.start()
@@ -845,35 +836,73 @@ class CameraMonitorApp:
             self.preview_running = False
             return
 
+    # def _handle_captured_image(self, frame):
+    #     # -------------------------------------------------------
+    #     # 1. Percentile-based contrast stretch (fixes black images)
+    #     # -------------------------------------------------------
+    #     # Ignore extreme hot pixels and noise floor
+    #     low = np.percentile(frame, 1)  # 1% black point
+    #     high = np.percentile(frame, 99)  # 99% white point
+    #
+    #     # Avoid division by zero
+    #     if high - low < 1e-9:
+    #         high = low + 1e-9
+    #
+    #     # Clip the frame to the usable range
+    #     frame_clipped = np.clip(frame, low, high)
+    #
+    #     # Normalize to 0–255 (8-bit)
+    #     norm = ((frame_clipped - low) / (high - low) * 255).astype(np.uint8)
+    #
+    #     # -------------------------------------------------------
+    #     # 2. Convert to PIL image and rotate 90 degrees
+    #     # -------------------------------------------------------
+    #     img = Image.fromarray(norm)
+    #     img = img.rotate(90, expand=True)
+    #
+    #     # -------------------------------------------------------
+    #     # 3. Resize ONLY for preview (not for saving)
+    #     # -------------------------------------------------------
+    #     img_preview = img.resize(
+    #         (self.preview_width, self.preview_height),
+    #         Image.Resampling.LANCZOS
+    #     )
+    #
+    #     imgtk = ImageTk.PhotoImage(image=img_preview)
+    #
+    #     # -------------------------------------------------------
+    #     # Return both the preview and the full-resolution image
+    #     # -------------------------------------------------------
+    #     return imgtk, img
+
     def _handle_captured_image(self, frame):
-        # Smooth brightness adjustment
-        fmin, fmax = np.min(frame), np.max(frame)
-        if self.vmin is None:
-            self.vmin, self.vmax = fmin, fmax
-        else:
-            self.vmin = 0.9 * self.vmin + 0.1 * fmin
-            self.vmax = 0.9 * self.vmax + 0.1 * fmax
+        # --- Fast min/max normalization ---
+        fmin = frame.min()
+        fmax = frame.max()
+        if fmax - fmin < 1:
+            fmax = fmin + 1
+        frame_8 = ((frame - fmin) / (fmax - fmin) * 255).astype(np.uint8)
 
-        frame = np.clip(frame, self.vmin, self.vmax)
-        norm = (255 * (frame - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
+        # --- Fast rotate using OpenCV ---
+        frame_rot = cv2.rotate(frame_8, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
-        # Convert to displayable image and resize to preview window
-        img = Image.fromarray(norm)
-        img = img.resize((self.preview_width, self.preview_height), Image.Resampling.LANCZOS)
+        # --- Fast resize using OpenCV ---
+        frame_small = cv2.resize(frame_rot, (self.preview_width, self.preview_height))
 
-        imgtk = ImageTk.PhotoImage(image=img)
-        return imgtk
+        # --- Convert to Tkinter object ---
+        imgtk = ImageTk.PhotoImage(Image.fromarray(frame_small))
+
+        return imgtk, Image.fromarray(frame_rot)
 
     def live_loop(self):
         try:
-            self.vmin, self.vmax = None, None
             while self.preview_running:
                 self.preview_cam.wait_for_frame(timeout=5)
                 frame = self.preview_cam.read_newest_image()
                 if frame is None:
                     continue
 
-                imgtk = self._handle_captured_image(frame)
+                imgtk, _ = self._handle_captured_image(frame)
                 self.preview_canvas.after(0, self.update_preview_display, imgtk)
         finally:
             self.preview_cam.stop_acquisition()
@@ -896,14 +925,18 @@ class CameraMonitorApp:
         """Capture an image from the selected camera"""
         serial = self.preview_camera.get()
         cam = self.cameras_dict[serial]
+        self.vmin, self.vmax = None, None
 
         if not cam.acquisition_in_progress():
             # Grab image (ensure it's 2D)
             cam.setup_acquisition(mode="snap", nframes=1)
             image = np.squeeze(cam.snap())
             print("Captured image shape:", image.shape)
-            imgtk = self._handle_captured_image(frame=image)
+
+
+            imgtk, img = self._handle_captured_image(frame=image)
             self.update_preview_display(imgtk)
+
         else:
             self.logger.warning(f"Camera {cam.serialNumber} is already acquiring an image")
             messagebox.showwarning(f"Camera {cam.serialNumber} is already acquiring an image. Please wait")
