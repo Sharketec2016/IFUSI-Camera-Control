@@ -141,7 +141,7 @@ class Camera(AndorSDK2Camera):
                 elif (configDict['shutterSettings']['ExternalShutter'].lower() == 'open'):
                     self.setup_shutter(mode='open')
                 elif (configDict['shutterSettings']['ExternalShutter'].lower() == 'close'):
-                    self.setup_shutter(mode='close')
+                    self.setup_shutter(mode='closed')
 
 
 
@@ -159,14 +159,9 @@ class Camera(AndorSDK2Camera):
                 self.temperature_setpoint = int(configDict['temperatureSetpoint'])
 
 
-                if self.is_acquisition_setup():
-                    self.is_configured = CameraState.CONFIGURED
-                    self.logger.info(f"Camera {self.serialNumber} configured successfully")
-                    return True
-                else:
-                    self.is_configured = CameraState.NOT_CONFIGURED
-                    self.logger.error(f"Camera {self.serialNumber} not configured")
-                    return False
+                self.is_configured = CameraState.CONFIGURED
+                self.logger.info(f"Camera {self.serialNumber} configured successfully")
+                return True
             except Exception as e:
                 self.logger.error(f"Camera {self.serialNumber} configuration failed: {e}")
                 self.is_configured = CameraState.NOT_CONFIGURED
@@ -179,13 +174,15 @@ class Camera(AndorSDK2Camera):
         channel = 0
         oamp = 0 if configDict['horizontalShift']['outputAmp'] is "EM" else 1
         preamp = 0 if configDict['horizontalShift']['preAmpGain'] is "Gain1" else 1
-        if(configDict['horizontalShift']['readoutRate'] == "30MHz"):
+        
+        readout_rate = configDict['horizontalShift']['readoutRate'].replace(" ", "").lower()
+        if readout_rate == "30mhz":
             hsspeed = 0
-        elif (configDict['horizontalShift']['readoutRate'] == "20MHz"):
+        elif readout_rate == "20mhz":
             hsspeed = 1
-        elif(configDict['horizontalShift']['readoutRate'] == "10MHz"):
+        elif readout_rate == "10mhz":
             hsspeed = 2
-        elif(configDict['horizontalShift']['readoutRate'] == "1MHz"):
+        elif readout_rate == "1mhz":
             hsspeed = 3
         else:
             hsspeed = 0
