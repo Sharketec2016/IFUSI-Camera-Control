@@ -1,5 +1,5 @@
 -------------------------------------------
-Author: Matthew Buchkowski
+Author: Matthew Buchkowski \
 Department: SCSU Physics (Astronomy)
 -------------------------------------------
 # IFUSI Speckling Imaging
