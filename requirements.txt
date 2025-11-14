@@ -4,3 +4,4 @@ matplotlib
 scipy
 astropy
 pylablib
+opencv-python
