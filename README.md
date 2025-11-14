@@ -15,13 +15,12 @@ This Python project provides a graphical user interface (GUI) for controlling up
 3. Preview live video feeds from each camera
 4. Run full experimental data acquisitions and save results to disk
 
-Note
-This program is designed specifically for the Andor iXon Ultra 888 EMCCD cameras.
+> [!NOTE]
+> This program is designed specifically for the Andor iXon Ultra 888 EMCCD cameras.
 Before running the GUI, you must install the appropriate Andor SDK and DLL libraries on the host system.
 These libraries are Windows-only — the DLLs are not compatible with Linux.
 You can obtain the latest SDK and driver package from:
 👉 https://andor.oxinst.com/downloads 
-
 
 
 ## Creating a workable env
