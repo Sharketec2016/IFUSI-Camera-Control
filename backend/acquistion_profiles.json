@@ -34,7 +34,7 @@
       "acquisitionNumber" : 1,
       "frameTransfer" : "OFF",
       "KineticSeriesLength" : 1,
-      "KineticCycleTime(sec)" : 0.09,
+      "KineticCycleTime" : 0.09,
       "verticalShift" : {
         "shiftSpeed" : "4.33",
         "clockVoltageAmplitude" : "Normal"
