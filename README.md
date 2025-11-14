@@ -46,4 +46,5 @@ To properly use the camera application, a suitable environment needs to be creat
 6. run the command `pip install -r requirements.txt`. This will recursively install all the necessary packages for running the project. 
 
 
-Note: If you include the `-d` flag when executing the script, lower level debug log files will be created for increased resolution on camera handling. 
+> [!NOTE]
+> If you include the `-d` flag when executing the script, lower level debug log files will be created for increased resolution on camera handling. 
