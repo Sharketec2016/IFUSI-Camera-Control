@@ -1,6 +1,6 @@
 -------------------------------------------
 Author: Matthew Buchkowski
-Department: Physics (Astronomy)
+Department: SCSU Physics (Astronomy)
 -------------------------------------------
 # IFUSI Speckling Imaging
 The Integrated Field Unit Speckle Imager (IFUSI) is a next-generation speckle imaging instrument that combines a fiber-fed Integral Field Unit (IFU) with an array of four Andor iXon Ultra 888 EMCCD cameras.
