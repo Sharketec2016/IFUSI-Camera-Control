@@ -5,18 +5,19 @@ Description: Main executable frontend for handing the iXAndor cameras.
 
 
 '''
-import os
+
 import tkinter as tk
+import cv2
 from tkinter import filedialog
+import numpy as np
+from time import sleep
 from tkinter.font import Font
 from tkinter import ttk, messagebox
-from PIL import ImageTk, Image, ImageOps
-from tkinter.messagebox import showinfo
+from PIL import ImageTk, Image
 import threading
 import time
 from queue import Queue
-from typing import Dict, List
-# from backend.cameraLogging import *
+from typing import Dict
 from backend.cameraConfig import *
 from backend.cameraDataHandle import *
 import logging as log
@@ -27,7 +28,7 @@ import pylablib as pll
 pll.par["devices/dlls/andor_sdk2"] = r"./Andor_Driver_Pack_2"
 import pylablib.devices.Andor as Andor
 
-serial_numbers = ["13703", "12606", "12574"]
+
 save_data_path = ""
 path_to_config_options_json = "./backend/configuration_options.json"
 cam_config_options_json = None
@@ -73,7 +74,7 @@ class CameraWorker:
                     self._handle_configure(settings)
                     
                 self.command_queue.task_done()
-            except Queue.Empty:
+            except Exception as e:
                 continue
                 
     def _handle_acquisition(self):
@@ -129,7 +130,7 @@ class CameraMonitorApp:
     def __init__(self, root, debugLogging = False, cam_config_options_json = None):
         self.root = root
         self.root.title("Camera Monitoring System")
-        self.root.geometry("800x600")
+        self.root.geometry("1200x800")
         self.root.minsize(800, 600)
         self.logger = self._setup_logging(debugLogging)
         self.custom_font = Font(family="Helvetica", size=14, weight="bold")
@@ -222,11 +223,15 @@ class CameraMonitorApp:
         self.config_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.config_frame, text="Camera Configuration")
 
+        self.experiment_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.experiment_frame, text="Experiment")
+
         # Setup the tabs
         self.setup_status_display()
         self.setup_notes_display()
         self.setup_preview_options()
         self.setup_config_display()
+        self.setup_experiment_tab()
 
         # --- Bottom Button Bar ---
         self.button_frame = ttk.Frame(self.main_frame)
@@ -335,111 +340,110 @@ class CameraMonitorApp:
         disconnect_all_btn = ttk.Button(ops_frame, text="Disconnect All", command=self.disconnect_all_cameras)
         disconnect_all_btn.pack(side=tk.LEFT, padx=5)
 
-    def check_if_idx_connected_already(self, cam_index : Camera):
-        for sn, cam in self.cameras_dict.items():
-            if cam.idx == cam_index and cam.is_opened():
-                return True
-        return False
-
     def setup_config_display(self):
-        """Build the Camera Configuration tab dynamically with camera selector, toolbar, and config viewer."""
-        self.logger.info("Setting up camera configuration tab")
+        """Build the Camera Configuration tab with a more organized tabbed layout."""
+        self.logger.info("Setting up redesigned camera configuration tab")
 
-        # --- Top toolbar: camera selection + Apply / Reset buttons ---
+        # --- Top toolbar (unchanged) ---
         top_frame = ttk.Frame(self.config_frame, padding=(5, 5))
         top_frame.pack(fill="x", pady=(10, 5), padx=10)
-
         ttk.Label(top_frame, text="Select Camera:", font=("Helvetica", 12, "bold")).pack(side="left", padx=(0, 5))
-
-        # Camera selector dropdown
         self.selected_camera_var = tk.StringVar(value=None)
         self.camera_selector = ttk.Combobox(
-            top_frame,
-            textvariable=self.selected_camera_var,
-            values=list(self.cameras_dict.keys()),
-            state="readonly",
-            width=20
+            top_frame, textvariable=self.selected_camera_var, values=list(self.cameras_dict.keys()),
+            state="readonly", width=20
         )
         self.camera_selector.pack(side="left", padx=(0, 10))
         self.camera_selector.bind("<<ComboboxSelected>>", self._update_current_camera_display)
-
-        # Apply and Reset buttons
         apply_btn = ttk.Button(top_frame, text="Apply to Camera", command=self._apply_camera_config)
         apply_btn.pack(side="left", padx=(0, 5))
-
         reset_btn = ttk.Button(top_frame, text="Reset to Defaults", command=self._reset_camera_config)
         reset_btn.pack(side="left")
 
-        # Spacer (for future elements or to push everything left)
-        ttk.Frame(top_frame).pack(side="left", expand=True)
-
-        # --- Two-column main layout ---
+        # --- Two-column main layout (unchanged) ---
         content_frame = ttk.Frame(self.config_frame)
         content_frame.pack(fill="both", expand=True, padx=10, pady=5)
         content_frame.columnconfigure(0, weight=2)
         content_frame.columnconfigure(1, weight=1)
 
-        # Left column (config editor)
+        # --- Left column: New Tabbed Notebook for settings ---
         left_frame = ttk.LabelFrame(content_frame, text="Configuration Editor", padding=10)
         left_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        
+        config_notebook = ttk.Notebook(left_frame)
+        config_notebook.pack(fill="both", expand=True)
 
-        # Right column (current camera config)
+        # Create the individual tabs
+        tab_acq = ttk.Frame(config_notebook, padding=10)
+        tab_shift = ttk.Frame(config_notebook, padding=10)
+        tab_gain = ttk.Frame(config_notebook, padding=10)
+        tab_cooling = ttk.Frame(config_notebook, padding=10)
+
+        config_notebook.add(tab_acq, text="Acquisition")
+        config_notebook.add(tab_shift, text="Shift/Image")
+        config_notebook.add(tab_gain, text="Gain/Shutter")
+        config_notebook.add(tab_cooling, text="Cooling")
+
+        # --- Right column: Current camera config viewer (unchanged) ---
         right_frame = ttk.LabelFrame(content_frame, text="Current Camera Configuration", padding=10)
         right_frame.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
-
-        # --- Scrollable config editor in left frame ---
-        canvas = tk.Canvas(left_frame)
-        scrollbar = ttk.Scrollbar(left_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Build config editor dynamically from JSON
-        def build_config_section(parent, data, section_prefix=""):
-            for key, value in data.items():
-                full_key = f"{section_prefix}.{key}" if section_prefix else key
-
-                if isinstance(value, dict):
-                    section_label = ttk.Label(parent, text=key, font=("Helvetica", 11, "bold"))
-                    section_label.pack(anchor="w", pady=(10, 0))
-                    sub_frame = ttk.Frame(parent, padding=(20, 0, 0, 0))
-                    sub_frame.pack(fill="x", padx=10)
-                    build_config_section(sub_frame, value, full_key)
-
-                elif isinstance(value, list):
-                    label = ttk.Label(parent, text=key)
-                    label.pack(anchor="w", padx=10)
-                    var = tk.StringVar(value=value[0])
-                    self.config_vars[full_key] = var
-                    dropdown = ttk.Combobox(parent, textvariable=var, values=value, state="readonly")
-                    dropdown.pack(fill="x", padx=20, pady=2)
-
-                elif isinstance(value, (int, float, str)):
-                    label = ttk.Label(parent, text=key)
-                    label.pack(anchor="w", padx=10)
-                    var_type = tk.DoubleVar if isinstance(value, float) else (
-                        tk.IntVar if isinstance(value, int) else tk.StringVar
-                    )
-                    var = var_type(value=value)
-                    self.config_vars[full_key] = var
-                    entry = ttk.Entry(parent, textvariable=var)
-                    entry.pack(fill="x", padx=20, pady=2)
-
-        # Build from JSON or show fallback message
-        if self.cam_config_options_json:
-            build_config_section(scrollable_frame, self.cam_config_options_json)
-        else:
-            ttk.Label(scrollable_frame, text="No configuration JSON loaded").pack(pady=20)
-
-        # --- Right column: Current camera configuration viewer ---
         self.camera_config_text = tk.Text(right_frame, wrap="none", height=30, state="disabled")
         self.camera_config_text.pack(fill="both", expand=True)
-
-        # Optional: placeholder text
         self._display_camera_config_text("No camera selected")
+
+        # --- Helper function to create a widget ---
+        def create_widget(parent, key, value, prefix=""):
+            full_key = f"{prefix}.{key}" if prefix else key
+            frame = ttk.Frame(parent)
+            frame.pack(fill="x", pady=2)
+            
+            label_text = key.replace("_", " ").title()
+            ttk.Label(frame, text=label_text, width=20).pack(side="left", anchor="w")
+
+            if isinstance(value, list):
+                var = tk.StringVar(value=value[0])
+                self.config_vars[full_key] = var
+                ttk.Combobox(frame, textvariable=var, values=value, state="readonly").pack(side="left", fill="x", expand=True)
+            elif isinstance(value, dict):
+                # For nested dicts, create a sub-frame
+                sub_frame = ttk.LabelFrame(parent, text=label_text, padding=10)
+                sub_frame.pack(fill="x", expand=True, pady=5, padx=5)
+                for sub_key, sub_value in value.items():
+                    create_widget(sub_frame, sub_key, sub_value, prefix=full_key)
+            else: # String, int, float
+                var_type = tk.DoubleVar if isinstance(value, float) else (tk.IntVar if isinstance(value, int) else tk.StringVar)
+                var = var_type(value=value)
+                self.config_vars[full_key] = var
+                ttk.Entry(frame, textvariable=var).pack(side="left", fill="x", expand=True)
+
+        # --- Populate the tabs with widgets ---
+        if self.cam_config_options_json:
+            # Define which top-level keys go into which tab
+            tab_map = {
+                "acquisitionMode": tab_acq, "triggeringMode": tab_acq, "readoutMode": tab_acq,
+                "exposureTime": tab_acq, "acquisitionNumber": tab_acq, "KineticSeriesLength": tab_acq,
+                "KineticCycleTime": tab_acq,
+                
+                "frameTransfer": tab_shift, "verticalShift": tab_shift, "horizontalShift": tab_shift,
+                "baselineClamp": tab_shift,
+
+                "emGain": tab_gain, "shutterSettings": tab_gain,
+
+                "fanLevel": tab_cooling, "temperatureSetpoint": tab_cooling
+            }
+            
+            for key, value in self.cam_config_options_json.items():
+                parent_tab = tab_map.get(key)
+                if parent_tab:
+                    create_widget(parent_tab, key, value)
+        else:
+            ttk.Label(config_notebook, text="No configuration JSON loaded").pack(pady=20)
+
+    def check_if_idx_connected_already(self, cam_index : int):
+        for sn, cam in self.cameras_dict.items():
+            if cam.idx == cam_index and cam.is_opened():
+                return True
+        return False
 
     def _display_camera_config_text(self, text: str):
         """Helper to safely update the right-side text box."""
@@ -447,6 +451,194 @@ class CameraMonitorApp:
         self.camera_config_text.delete(1.0, tk.END)
         self.camera_config_text.insert(tk.END, text)
         self.camera_config_text.config(state="disabled")
+
+    def setup_experiment_tab(self):
+        """Sets up the UI for the Experiment tab."""
+        self.logger.info("Setting up experiment tab")
+
+        # --- Title ---
+        experiment_title = ttk.Label(self.experiment_frame, text="Parallel Camera Experiment", font=("Arial", 14, "bold"))
+        experiment_title.pack(pady=10)
+
+        # --- Status Display ---
+        status_frame = ttk.LabelFrame(self.experiment_frame, text="Camera Status", padding=10)
+        status_frame.pack(fill="x", padx=20, pady=10)
+
+        self.experiment_status_labels = {}
+        for i, serial in enumerate(self.camera_serials):
+            frame = ttk.Frame(status_frame)
+            frame.pack(fill=tk.X, pady=5)
+            
+            label = ttk.Label(frame, text=f"Camera {i+1} ({serial}):")
+            label.pack(side=tk.LEFT, padx=5)
+            
+            status_label = ttk.Label(frame, text="Not Ready", font=("Arial", 12))
+            status_label.pack(side=tk.LEFT, padx=20)
+            
+            self.experiment_status_labels[serial] = status_label
+
+        # --- Controls ---
+        control_frame = ttk.Frame(self.experiment_frame)
+        control_frame.pack(fill="x", padx=20, pady=10)
+
+        self.run_experiment_btn = ttk.Button(control_frame, text="Run Experiment", command=self.run_experiment)
+        self.run_experiment_btn.pack(side=tk.LEFT, padx=5)
+
+        ttk.Label(control_frame, text="Acquisition Mode:").pack(side=tk.LEFT, padx=(10, 5))
+        self.acq_mode_var = tk.StringVar(value="Kinetic Series")
+        acq_mode_cb = ttk.Combobox(control_frame, textvariable=self.acq_mode_var, values=["Single Scan", "Kinetic Series"], state="readonly", width=15)
+        acq_mode_cb.pack(side=tk.LEFT)
+        acq_mode_cb.bind("<<ComboboxSelected>>", self._on_acq_mode_change)
+
+
+        self.num_frames_label = ttk.Label(control_frame, text="Number of Frames:")
+        self.num_frames_label.pack(side=tk.LEFT, padx=(10, 5))
+        self.num_frames_var = tk.StringVar(value="10")
+        self.num_frames_entry = ttk.Entry(control_frame, textvariable=self.num_frames_var, width=10)
+        self.num_frames_entry.pack(side=tk.LEFT)
+
+        # --- Log Area ---
+        log_frame = ttk.LabelFrame(self.experiment_frame, text="Experiment Log", padding=10)
+        log_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        self.experiment_log = tk.Text(log_frame, height=10, wrap=tk.WORD, state="disabled")
+        self.experiment_log.pack(fill="both", expand=True)
+
+    def _on_acq_mode_change(self, event=None):
+        """Handles changes in the acquisition mode dropdown."""
+        mode = self.acq_mode_var.get()
+        if mode == "Single Scan":
+            self.num_frames_entry.config(state="disabled")
+            self.num_frames_var.set("1")
+        else: # Kinetic Series
+            self.num_frames_entry.config(state="normal")
+
+    def run_experiment(self):
+        """Runs the parallel camera acquisition experiment."""
+        self.run_experiment_btn.config(state="disabled")
+        self._log_experiment("Starting experiment...")
+
+        if not self._pre_experiment_check():
+            self._log_experiment("Pre-experiment check failed. Aborting.")
+            self.run_experiment_btn.config(state="normal")
+            return
+
+        self._log_experiment("All cameras are ready. Starting acquisition threads...")
+
+        threads = []
+        for serial, camera in self.cameras_dict.items():
+            thread = threading.Thread(target=self._acquisition_thread_worker, args=(camera,), daemon=True)
+            threads.append(thread)
+            thread.start()
+
+        # We can optionally add a thread to monitor the completion of all acquisition threads
+        monitor_thread = threading.Thread(target=self._monitor_experiment_completion, args=(threads,), daemon=True)
+        monitor_thread.start()
+
+    def _pre_experiment_check(self):
+        """Checks if all cameras are connected and configured."""
+        self._log_experiment("Performing pre-experiment check...")
+        all_ready = True
+        
+        # if len(self.cameras_dict) != 4:
+        #     self._log_experiment(f"Error: Expected 4 connected cameras, but found {len(self.cameras_dict)}.")
+        #     all_ready = False
+
+        for serial, label in self.experiment_status_labels.items():
+            if serial in self.cameras_dict:
+                camera = self.cameras_dict[serial]
+                if camera.connection_status == CameraState.CONNECTED and camera.is_configured == CameraState.CONFIGURED:
+                    label.config(text="Ready", foreground="green")
+                else:
+                    status_text = f"Not Ready (Connected: {camera.connection_status.name}, Configured: {camera.is_configured.name})"
+                    label.config(text=status_text, foreground="red")
+                    all_ready = False
+            else:
+                label.config(text="Not Connected", foreground="red")
+                all_ready = False
+        
+        # return all_ready
+        return True #TODO remove this after debugging. Update this function to allow for only the cameras ready to go
+    def _acquisition_thread_worker(self, camera):
+        """The function that each camera thread will execute."""
+        serial = camera.serialNumber
+        try:
+            self._log_experiment(f"[{serial}] Starting acquisition.")
+            self.experiment_status_labels[serial].config(text="Acquiring", foreground="orange")
+
+            acq_mode = self.acq_mode_var.get()
+
+            if acq_mode == "Kinetic Series":
+                try:
+                    num_frames = int(self.num_frames_var.get())
+                    if num_frames <= 0:
+                        raise ValueError("Number of frames must be positive.")
+                except ValueError as e:
+                    self._log_experiment(f"[{serial}] Invalid number of frames: {self.num_frames_var.get()}. Aborting. Error: {e}")
+                    self.experiment_status_labels[serial].config(text="Error", foreground="red")
+                    return
+
+                camera.setup_acquisition(mode="kinetic", nframes=num_frames)
+                camera.start_acquisition()
+                
+                # Wait for acquisition to finish by polling
+                for i in range(num_frames):
+                    camera.wait_for_frame()
+                
+                self._log_experiment(f"[{serial}] Acquisition finished. Reading {num_frames} frames...")
+
+                # Read all frames from buffer
+                frames = []
+                for i in range(num_frames):
+                    frame = camera.read_newest_image(return_info=False)
+                    if frame is not None:
+                        frames.append(frame)
+                
+                if not frames:
+                    raise RuntimeError("Acquired no frames from the camera.")
+
+                data = np.stack(frames)
+
+            elif acq_mode == "Single Scan":
+                camera.setup_acquisition(mode="single", nframes=1)
+                self._log_experiment(f"[{serial}] Snapping single image...")
+                data = camera.snap(timeout=5) # 10 second timeout for a single snap
+                print(f"size of data image: {data.shape} | serial: {serial}")
+                self._log_experiment(f"[{serial}] Single image snapped.")
+
+            else:
+                raise ValueError(f"Unknown acquisition mode: {acq_mode}")
+
+            
+            self._log_experiment(f"[{serial}] Saving data to FITS file.")
+            
+            header_text = self.notes_text.get("1.0", tk.END)
+            save_path = os.path.join(os.getcwd(), "Data")
+            os.makedirs(save_path, exist_ok=True)
+            
+            save_fits_data(data, savepath=save_path, header_text=header_text, serial=serial)
+            
+            self.experiment_status_labels[serial].config(text="Finished", foreground="blue")
+            self._log_experiment(f"[{serial}] Data saved successfully.")
+
+        except Exception as e:
+            self.experiment_status_labels[serial].config(text="Error", foreground="red")
+            self._log_experiment(f"[{serial}] Error: {e}")
+        
+    def _monitor_experiment_completion(self, threads):
+        """Waits for all acquisition threads to complete."""
+        for thread in threads:
+            thread.join()
+        
+        self._log_experiment("All cameras have finished their tasks. Experiment complete.")
+        self.run_experiment_btn.config(state="normal")
+
+    def _log_experiment(self, message):
+        """Logs a message to the experiment log text widget."""
+        self.experiment_log.config(state="normal")
+        self.experiment_log.insert(tk.END, f"{time.strftime('%H:%M:%S')} - {message}\n")
+        self.experiment_log.see(tk.END)
+        self.experiment_log.config(state="disabled")
 
     def _update_current_camera_display(self, event=None):
         """When a camera is selected, load its JSON file (or create one if missing) and display."""
@@ -499,6 +691,8 @@ class CameraMonitorApp:
 
         self.logger.info(f"Saved updated config for camera {serial}")
         self._display_camera_config_text(json.dumps(new_cfg, indent=2))
+
+        self.cameras_dict[serial].camera_configuration(configDict = new_cfg)
 
     def _unflatten_config(self, flat_dict):
         """Convert {'a.b.c': 1} back into nested dict structure."""
@@ -570,12 +764,17 @@ class CameraMonitorApp:
             camera_list = list(self.cameras_dict.keys())
             if hasattr(self, "preview_select"):
                 self.preview_select['values'] = camera_list
-                self.camera_selector['values'] = camera_list
                 if camera_list:
                     self.preview_select.current(0)
 
                 else:
                     self.preview_camera.set("")
+            if hasattr(self, "camera_selector"):
+                self.camera_selector['values'] = camera_list
+                if camera_list:
+                    self.camera_selector.current(0)
+                else:
+                    self.camera_selector.set("")
         except Exception as e:
             self.logger.error(f"Error updating UI: {e}")
 
@@ -588,10 +787,10 @@ class CameraMonitorApp:
         self.logger.info("Connecting to all cameras...")
         try:
             num_cameras = self.__identify_cameras__() #This identifies the number of cameras connected.
-            if num_cameras:
+            if num_cameras > 0:
                 for i in range(num_cameras):
                     if not self.check_if_idx_connected_already(i):
-                        cam = Camera(idx=i, temperature=-25, fan_mode='full', amp_mode=None);
+                        cam = Camera(idx=i, temperature=-25, fan_mode='full', amp_mode=None)
                         if cam.connection_status == CameraState.CONNECTED:
                             try:
                                 info = cam.get_device_info()
@@ -615,11 +814,11 @@ class CameraMonitorApp:
                                 cam.close()
                         else:
                             self.logger.error(f"Failed to connect to camera {cam.serialNumber}.")
-                self.update_UI_elements()
         except Exception as e:
             self.logger.error(f"Failed within connecting to all cameras {e}")
             if self.logger.level == log.DEBUG:
                 print(f"Failed to connect cameras: {e}")
+        self.update_UI_elements()
 
     def disconnect_all_cameras(self):
         """Disconnect all cameras and update their status."""
@@ -953,27 +1152,15 @@ class CameraMonitorApp:
             self.preview_select.configure(state="disabled")
             self.start_camera_preview(serial)
 
-        elif not start and getattr(self, "preview_running", False):
+        elif not start and getattr(self, "preview_running", True):
             self.preview_running = False
             self.preview_select.configure(state="readonly")
             self.preview_canvas.config(text="Preview stopped", image="")
 
     def start_camera_preview(self, serial):
         """Start live camera preview loop"""
+        self.preview_cam = self.cameras_dict[serial]
         try:
-            self.preview_cam = self.cameras_dict[serial]
-            self.preview_cam.set_exposure(0.04)
-            self.preview_cam.setup_shutter(mode="open")
-            self.preview_cam.set_trigger_mode("int")
-            self.preview_cam.set_amp_mode(
-                channel=0,
-                oamp=0,
-                hsspeed=1,
-                preamp=2
-            )
-            self.preview_cam.setup_acquisition(mode="sequence", nframes=100)
-
-            sleep(0.5)
             self.preview_cam.start_acquisition()
             self.preview_thread = threading.Thread(target=self.live_loop, daemon=True)
             self.preview_thread.start()
@@ -982,31 +1169,34 @@ class CameraMonitorApp:
             self.preview_running = False
             return
 
+    def _handle_captured_image(self, frame):
+        # --- Fast min/max normalization ---
+        fmin = frame.min()
+        fmax = frame.max()
+        if fmax - fmin < 1:
+            fmax = fmin + 1
+        frame_8 = ((frame - fmin) / (fmax - fmin) * 255).astype(np.uint8)
+
+        # --- Fast rotate using OpenCV ---
+        frame_rot = cv2.rotate(frame_8, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+        # --- Fast resize using OpenCV ---
+        frame_small = cv2.resize(frame_rot, (self.preview_width, self.preview_height))
+
+        # --- Convert to Tkinter object ---
+        imgtk = ImageTk.PhotoImage(Image.fromarray(frame_small))
+
+        return imgtk, Image.fromarray(frame_rot)
+
     def live_loop(self):
         try:
-            self.vmin, self.vmax = None, None
             while self.preview_running:
                 self.preview_cam.wait_for_frame(timeout=5)
                 frame = self.preview_cam.read_newest_image()
                 if frame is None:
                     continue
 
-                # Smooth brightness adjustment
-                fmin, fmax = np.min(frame), np.max(frame)
-                if self.vmin is None:
-                    self.vmin, self.vmax = fmin, fmax
-                else:
-                    self.vmin = 0.9 * self.vmin + 0.1 * fmin
-                    self.vmax = 0.9 * self.vmax + 0.1 * fmax
-
-                frame = np.clip(frame, self.vmin, self.vmax)
-                norm = (255 * (frame - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
-
-                # Convert to displayable image and resize to preview window
-                img = Image.fromarray(norm)
-                img = img.resize((self.preview_width, self.preview_height), Image.Resampling.LANCZOS)
-
-                imgtk = ImageTk.PhotoImage(image=img)
+                imgtk, _ = self._handle_captured_image(frame)
                 self.preview_canvas.after(0, self.update_preview_display, imgtk)
         finally:
             self.preview_cam.stop_acquisition()
@@ -1025,45 +1215,25 @@ class CameraMonitorApp:
         self.preview_canvas.imgtk = imgtk
         self.preview_canvas.configure(image=imgtk)
 
-    def array_to_photoimage(self, array):
-        """Convert a grayscale numpy array to a Tkinter-compatible PhotoImage"""
-        array = np.clip(array, 0, None)  # remove negatives
-        norm = 255 * (array - np.min(array)) / (np.ptp(array) + 1e-5)
-        img = Image.fromarray(norm.astype(np.uint8), mode="L")
-        return ImageTk.PhotoImage(img)
-
     def capture_image(self):
         """Capture an image from the selected camera"""
         serial = self.preview_camera.get()
         cam = self.cameras_dict[serial]
+        self.vmin, self.vmax = None, None
 
         if not cam.acquisition_in_progress():
             # Grab image (ensure it's 2D)
+            cam.setup_acquisition(mode="snap", nframes=1)
             image = np.squeeze(cam.snap())
             print("Captured image shape:", image.shape)
 
-            # Smooth brightness adjustment
-            fmin, fmax = np.min(image), np.max(image)
-            if not hasattr(self, "vmin") or self.vmin is None:
-                self.vmin, self.vmax = fmin, fmax
-            else:
-                self.vmin = 0.9 * self.vmin + 0.1 * fmin
-                self.vmax = 0.9 * self.vmax + 0.1 * fmax
 
-            image = np.clip(image, self.vmin, self.vmax)
-            norm = (255 * (image - self.vmin) / (self.vmax - self.vmin + 1e-9)).astype(np.uint8)
-
-            # Convert to displayable image and resize to preview window
-            img = Image.fromarray(norm)
-            img = img.resize((self.preview_width, self.preview_height), Image.Resampling.LANCZOS)
-            imgtk = ImageTk.PhotoImage(image=img)
-
+            imgtk, img = self._handle_captured_image(frame=image)
             self.update_preview_display(imgtk)
+
         else:
             self.logger.warning(f"Camera {cam.serialNumber} is already acquiring an image")
             messagebox.showwarning(f"Camera {cam.serialNumber} is already acquiring an image. Please wait")
-
-
 
     def exit_app(self):
         """Clean exit of the application"""
@@ -1083,14 +1253,6 @@ class CameraMonitorApp:
             print(f"Error stopping monitoring thread: {e}")
         
         self.root.destroy()
-        
-    def start_monitoring(self):
-        """Start the monitoring thread"""
-        if not self.monitor_thread or not self.monitor_thread.is_alive():
-            self.monitoring = True
-            self.monitor_thread = threading.Thread(target=self.update_acquisition_status, daemon=True)
-            self.monitor_thread.start()
-            print("Camera monitoring started")
 
     def stop_monitoring(self):
         """Stop the monitoring thread"""
@@ -1172,9 +1334,9 @@ class CameraMonitorApp:
             worker.stop_worker()
             
         self.running_experiment = False
-        self.start_monitoring()
+
         messagebox.showinfo("Complete", "Experiment completed successfully!")
-    
+
     def _setup_logging(self, debugLogging):
         logger = log.getLogger(f"CameraApplication")
         if(debugLogging):
@@ -1187,13 +1349,13 @@ class CameraMonitorApp:
                 os.makedirs(f"{dir_path}/logs")
             save_path = f"{dir_path}/logs"
             handler = log.FileHandler(f'{save_path}/cameraApplication.log')
-            
+
             if(debugLogging):
                 handler.setLevel(log.DEBUG)
             else:
                 handler.setLevel(log.INFO)
-            
-            
+
+
             formatter = log.Formatter('[%(asctime)s] %(name)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
             handler.setFormatter(formatter)
             logger.addHandler(handler)

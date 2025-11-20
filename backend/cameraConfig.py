@@ -76,7 +76,7 @@ class Camera(AndorSDK2Camera):
             self.cam_config = configDict
 
         elif configDir is not None and os.path.isdir(configDir):
-            expected_name = f"{self.serialNumber}_configs.json"
+            expected_name = f"{self.serialNumber}_config.json"
             for f in os.listdir(configDir):
                 if f == expected_name:
                     file_path = os.path.join(configDir, f)

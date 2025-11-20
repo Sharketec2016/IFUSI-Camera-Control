@@ -75,7 +75,7 @@ def save_fits_data(data, savepath=None, header_text=None, serial=None):
     
     hdu = fits.PrimaryHDU(data)
     hdul = fits.HDUList([hdu])
-    hdr = buildHeader(hdul=hdul, header=hdul[0].header, filename=None)
+    # hdr = buildHeader(hdul=hdul, header=header_text, filename=None)
     curr_date = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
     
     filename = f"{savepath}/{curr_date}_{serial}.fits" if serial else f"{savepath}/{curr_date}.fits"
