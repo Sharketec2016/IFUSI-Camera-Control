@@ -20,7 +20,6 @@ class CameraState(Enum):
     ERROR = 7
     
 
-
 class Camera(AndorSDK2Camera):
     def __init__(self, idx, temperature=None, fan_mode='full', amp_mode=None):
         super().__init__(idx=idx, temperature=temperature, fan_mode=fan_mode, amp_mode=amp_mode)
@@ -174,7 +173,7 @@ class Camera(AndorSDK2Camera):
         channel = 0
         oamp = 0 if configDict['horizontalShift']['outputAmp'] is "EM" else 1
         preamp = 0 if configDict['horizontalShift']['preAmpGain'] is "Gain1" else 1
-        
+
         readout_rate = configDict['horizontalShift']['readoutRate'].replace(" ", "").lower()
         if readout_rate == "30mhz":
             hsspeed = 0

@@ -65,7 +65,7 @@ def buildHeader(hdul, header, filename = None, header_text = None):
 
     return
 
-def save_fits_data(data, savepath=None, header_text=None):
+def save_fits_data(data, savepath=None, header_text=None, serial=None):
     if data is None:
         return 
     if savepath is None:
@@ -77,7 +77,9 @@ def save_fits_data(data, savepath=None, header_text=None):
     hdul = fits.HDUList([hdu])
     hdr = buildHeader(hdul=hdul, header=hdul[0].header, filename=None)
     curr_date = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
-    hdul.writeto(f"{savepath}/{curr_date}.fits", overwrite=True)
+    
+    filename = f"{savepath}/{curr_date}_{serial}.fits" if serial else f"{savepath}/{curr_date}.fits"
+    hdul.writeto(filename, overwrite=True)
 
 def save_csv_data(data, savepath=None, header_text=None):
     if data is None:
