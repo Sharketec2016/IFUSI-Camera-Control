@@ -45,6 +45,18 @@ To properly use the camera application, a suitable environment needs to be creat
 5. Once the venv has been activated, ascend back into the root directory. Make sure you are not in the same dir as the _requirements.txt_ file. 
 6. run the command `pip install -r requirements.txt`. This will recursively install all the necessary packages for running the project. 
 
-
 > [!NOTE]
 > If you include the `-d` flag when executing the script, lower level debug log files will be created for increased resolution on camera handling. 
+> 
+### Trouble Shooting Camera Connection
+Sometimes when you attempt to connect to the camera you may encounter an error like this `Failed to connect cameras: function 'Initialize' raised error 20992(DRV_NOT_AVAILABLE)`. When this error happens it is usually due to a couple of reason. 
+1. The camera(s) is/are not powered on. If so please power on and connect to the computer. To verify you have a successful connection check device manager for a new device called `libusb-win32 devices` and find your camera in there. 
+2. The camera is not plugged in. Plug in the camera and follow the same verification process as step 1
+3. Another process is holding up the camera resources. Close all other programs (like Solis) that might be restricting you from connecting. Then try again. 
+4. Corrupted USB driver stack. This is a bit of a phantom bug, but essentially the usb driver stack for either the camera or windows itself is able to detect a device connected but you are unable to communicate with it over the USB line. To resolve this you need to folow these steps.
+   1. Open device manager and find the possibly Andor iXon Ultra device. 
+   2. Right click the camera and select `Disable device`. - This will disable the usb driver for that device. 
+   3. wait ~5 seconds
+   4. Right click the camera again and `Enable device`. - This will restart the usb driver. 
+   5. Open a known working, stable, program (like solis) to confirm you are now able to connect and stream data from the camera. 
+

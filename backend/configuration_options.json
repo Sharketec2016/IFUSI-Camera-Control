@@ -1,4 +1,3 @@
-
 {
   "acquisitionMode" : ["single", "kinetic"],
   "triggeringMode" : ["int"],
@@ -6,7 +5,7 @@
   "exposureTime" : 0.00,
   "acquisitionNumber" : 1,
   "KineticSeriesLength" : 1,
-  "KineticCycleTime(sec)" : 0.09,
+  "KineticCycleTime" : 0.09,
   "frameTransfer" : ["OFF", "ON"],
   "verticalShift" : {
     "shiftSpeed" : ["0.6", "1.13", "2.2", "4.33"],
